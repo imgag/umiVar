@@ -38,18 +38,15 @@ def extract_barcode(read_entry, barcode_type):
     barcode_entry = qname.split(':')[-1]
     bc1 = barcode_entry.split(',')[0]
     bc2 = barcode_entry.split(',')[1]
+    barcode_sequence = ""
 
     # Grouping by barcodes
     if barcode_type == "BEGINNING":
         barcode_sequence = bc1
-
     elif barcode_type == "END":
         barcode_sequence = bc2
-
     elif barcode_type == "BOTH":
         barcode_sequence = bc1 + bc2
-    else:
-        barcode_sequence = ""
 
     return barcode_sequence
 
@@ -62,8 +59,8 @@ def extract_bc_groups(barcode_entries, bc_network):  # Input, list of reads with
 
     while len(barcode_entries) > 0:
 
-        # The reads are stored in dict barcode_entries. Their keys are the Barcodes.
-        # We get the most frequent KEY (Barcode)
+        # The reads are stored in dict barcode_entries. Their keys are the barcodes.
+        # Get the most frequent key (Barcode)
         most_frequent_barcode = sorted_key_list[0]
 
         # Create a new key of the most common barcode to which reads with the same barcode are added (barcode read group).
@@ -98,7 +95,7 @@ def reduce_mapq(read_original):
     return read_new
 
 
-# Return integer value of ascii character
+# Return integer value of ascii quality character
 def ascii2int(ascii_values):
     quality = [ord(i) - 33 for i in ascii_values]
     return quality
@@ -136,8 +133,7 @@ def get_qualities(base_of_interest, nucleotides, qualities):
 def error_read_qual(read_entry):
     adjusted_read = read_entry
     qualities = adjusted_read.qual
-    read_length = len(qualities)
-    qualities = ''.join(["!" for i in range(read_length)])
+    qualities = "!" * len(qualities)
     adjusted_read.qual = qualities
     return adjusted_read
 
@@ -145,8 +141,7 @@ def error_read_qual(read_entry):
 # Change discordant bases in a barcode group to Ns
 def error_read_seq(read_entry):
     adjusted_read = read_entry
-    read_length = len(adjusted_read.seq)
-    adjusted_read.seq = ''.join(["N" for i in range(read_length)])
+    adjusted_read.seq = "N" * len(adjusted_read.seq)
     return adjusted_read
 
 
@@ -157,13 +152,11 @@ def low_quality_base_check(qualities, min_bq):
 
 # Get consensus read qualities
 def consensus_quality(qualities, min_bq, errors, step):
-    qualities_native = qualities
-
-    # How many bases with  good quality
-    copies = len([x for x in range(0, len(qualities_native)) if qualities_native[x] >= min_bq])
+    # Get number of bases with  good quality
+    copies = len([x for x in range(0, len(qualities)) if qualities[x] >= min_bq])
 
     # Compute base qualities of consensus base
-    max_qual = max(qualities_native)
+    max_qual = max(qualities)
     new_qual = 0
     if max_qual < min_bq:
         new_qual = max_qual
@@ -178,10 +171,8 @@ def consensus_quality(qualities, min_bq, errors, step):
 
             # Otherwise, the maximum quality value across PCR copies is used as new quality, with minimum of 30
             else:
-                # We take the max base quality as the consensus one
-                max_quality = max(qualities_native)
-                adjusted_max_quality = max(30, max_quality)
-                new_qual = adjusted_max_quality
+                max_quality = max(qualities)
+                new_qual = max(30, max_quality)
 
     return new_qual
 
@@ -190,73 +181,57 @@ def consensus_quality(qualities, min_bq, errors, step):
 def generate_consensus_read(reads, min_bq, step, set_n):
     consensus_seq = list()
     consensus_qual = list()
+    consensus_read = reads[0]
 
     # Objects to save info in lexicographic order of the reads
-    list_read_names = list()
+    read_names_list = list()
     reads_dict = {}
     flag_dict = {}
     dp1_tag = list()
 
     color = ['230,242,255', '179,215,255', '128,187,255', '77,160,255', '26,133,255']
 
-    if len(reads) <= 1:
+    if len(reads) == 1:
 
-        for i in reads:
+        # Add info about the amount of duplicates per barcode family group
+        count = 1
+        current_color = color[0]
 
-            # Encoding quality
-            consensus_read = i
+        # Adding barcodes to tag in bam file
+        if step == 1:
+            consensus_read.tags += [('DP', count)]
+            consensus_read.tags += [('YC', current_color)]
+        elif step == 2:
+            consensus_read.tags += [('DF', count)]
 
-            # Add info about the amount of duplicates per barcode family group
-            count = len(reads)
-
-            if count > 5:
-                current_color = color[4]
-            else:
-                current_color = color[count - 1]
-
-            # Adding barcodes to tag in bam file
-            if step == 1:
-                consensus_read.tags += [('DP', count)]
-                consensus_read.tags += [('YC', current_color)]
-            elif step == 2:
-                consensus_read.tags += [('DF', count)]
-
-            # Info about barcode groups
-            log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
-            log_info = "\t".join(log_info) + "\n"
+        # Info about barcode groups
+        log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
+        log_info = "\t".join(log_info) + "\n"
 
     else:
-        reference_length = [(k.reference_length, k.rlen, k.cigarstring) for k in reads]
+        # Use the characteristics of the first read's alignment to check if other reads in the barcode group
+        # diverge in the number and alignment of gaps (these will be flagged as bad quality)
+        first_ref_length = reads[0].reference_length
+        first_read_length = reads[0].rlen
+        first_cigar = reads[0].cigarstring
 
-        # TODO
-        # max_info = max(sorted(set(reference_length), reverse=True), key=reference_length.count)
-
-        # Reference length
-        max_ref_length = 72    # max_info[0]
-
-        # Read length
-        max_read_length = 72   # max_info[1]
-
-        # Max cigar string
-        max_cigar_length = 72  # max_info[2]
-
+        # Containers for consensus read
         seq_dict = {}
         qual_dict = {}
         mapq_list = list()
         lq_read_count = 0
-        # TODO
         last_read = reads[0]
 
+        # Compare the sequence of reads in a barcode group
         for i in reads:
 
-            # In case that the amount of indels differ between duplicates, take the first read in the lexicographic order and change all base qualities to 0
-            if (max_ref_length != i.reference_length) or (max_read_length != i.rlen) or (
-                    max_cigar_length != i.cigarstring):
+            # In case that the amount of indels differs between duplicates, take the first read as consensus, but change all base qualities to 0
+            if (first_ref_length != i.reference_length) or (first_read_length != i.rlen) or (first_cigar != i.cigarstring):
                 read_name = i.qname
                 flag = i.flag
                 reads_dict[read_name] = i
                 flag_dict[read_name] = flag
-                list_read_names.append(read_name)
+                read_names_list.append(read_name)
                 lq_read_count = lq_read_count + 1
                 continue
 
@@ -271,7 +246,7 @@ def generate_consensus_read(reads, min_bq, step, set_n):
             flag = i.flag
             reads_dict[read_name] = i
             flag_dict[read_name] = flag
-            list_read_names.append(read_name)
+            read_names_list.append(read_name)
 
             read_length = i.rlen
             seq = i.seq
@@ -349,14 +324,14 @@ def generate_consensus_read(reads, min_bq, step, set_n):
                 consensus_qual.append(consensus_quality_ascii)
 
         # Take the info from the last read in the group
-        sorted_read_names = sorted(list_read_names)
+        sorted_read_names = sorted(read_names_list)
 
         # Take as template the last HQ read, but change the read name and the flag
         consensus_read = last_read
         consensus_read.qname = sorted_read_names[0]
 
-        # TODO Mapping quality == mean of reads' mapq
-        if len(mapq_list) > 0.0:
+        # Compute average mapping quality
+        if len(mapq_list) > 0:
             consensus_read.mapq = int(round(float(sum(mapq_list)) / len(mapq_list)))
         else:
             consensus_read.mapq = 0
@@ -511,8 +486,7 @@ def main():
 
                         for barcode in barcode_dict:
                             # Printing consensus reads to a new bam file
-                            new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, step,
-                                                                           set_n)
+                            new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, step, set_n)
                             logfile.write(log_string)
                             outfile.write(new_read)
 
