@@ -4,96 +4,17 @@
 import argparse
 import time
 import numpy
-import pybedtools
 import scipy.stats
 from pathlib import Path
 
 numpy.seterr(divide='ignore')
 
 
-# Check sequence complexity (detects sequences with homopolymers)
-def longest_run(s):
-    if len(s) == 0:
-        return 0
-
-    runs = ''.join('*' if x == y else ' ' for x, y in zip(s, s[1:]))
-    star_strings = runs.split()
-
-    if len(star_strings) == 0:
-        return 1
-
-    return 1 + max(len(stars) for stars in star_strings)
-
-
-# Get the percentage of the most frequent nucleotide in a sequence (identifies low complexity sequence)
-def frequent_base(s):
-    nucleotide_list = list(s)
-    majority_base = max([nucleotide_list.count(base) for base in set(nucleotide_list)])
-    allele_frequency = round(float(majority_base) / len(s), 2)
-    return allele_frequency
-
-
-# Obtain adjacent sequence
-def up_down_sequence(chrom, start, up_down_length, infile, chrom_length=-1):
-    # DEBUG: return arbitrary sequence. Done for speed check.
-    sequence_list = ["ACGTG", "CGTAG"]
-    return sequence_list
-
-
-'''
-    # As it works with 0-based coordinates, we must subtract 1 base to our start coordinate
-    start = int(start)
-    start = start - 1
-
-    # Upstream
-    end = start - up_down_length + 1
-
-    # return 'N'-sequence if interval extends over chromosome bounds
-    if int(end) < 1:
-        seq_up = 'N' * up_down_length
-    else:
-        # Getting sequence downstream
-        a = pybedtools.BedTool("\t".join([chrom, str(end), str(start)]), from_string=True)
-        a = a.sequence(fi=infile)
-
-        j = open(a.seqfn).read()
-        j = j.rstrip('\n')
-
-        # Sequence
-        seq_up = j.split('\n')[1]
-
-    # Downstream
-    start = start + 1
-    end = start + up_down_length
-
-    # return 'N'-sequence if interval extends over chromosome bounds
-    if chrom_length != -1 and end > chrom_length:
-        seq_down = 'N' * up_down_length
-    else:
-        # Getting sequence upstream
-        a = pybedtools.BedTool("\t".join([chrom, str(start), str(end)]), from_string=True)
-        a = a.sequence(fi=infile)
-
-        j = open(a.seqfn).read()
-        j = j.rstrip('\n')
-        seq_down = j.split('\n')[1]
-    
-    # Return upstream and downstream sequence    
-    sequence_list = [seq_up, seq_down]
-    return sequence_list
-'''
-
-
 # Filter variants using various filter types
-def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, seq_upstream, seq_downstream):
+def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
+
+    # Declare variables
     gt, sig, alt_count, ab, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
-
-    # Analysis of flanking sequences: check homopolymer length and sequence complexity
-    seq_upstream_l = longest_run(seq_upstream)
-    seq_upstream_freq = frequent_base(seq_upstream)
-
-    seq_downstream_l = longest_run(seq_downstream)
-    seq_downstream_freq = frequent_base(seq_downstream)
 
     # Reference and alternative base for this variant
     ref_base, alt_base = gt.split(">")
@@ -105,41 +26,51 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, seq_upstream, seq_
     if float(alt_count) > 0 and mm > 0:
         filter_criteria = []
 
+        # Filter: sequencing error FDR
         if float(alt_count_fdr) > 0.1:
             filter_criteria.append("Error")
 
-        if (seq_upstream_l >= 3 or seq_upstream_freq >= 0.8) and len(gt) > 3:
-            filter_criteria.append("LC_Upstream")
+        # Filter: homopolymer
+        if chrom in homopolymer_positions:
+            if pos in homopolymer_positions[chrom]:
+                print(str(homopolymer_positions[chrom][pos]))
+                filter_criteria.append("Homopolymer")
 
-        if (seq_downstream_l >= 3 or seq_downstream_freq >= 0.8) and len(gt) > 3:
-            filter_criteria.append("LC_Downstream")
-
+        # Filter: minimum allele frequency
         if float(ab) < min_AF:
             filter_criteria.append("Low_AF")
 
+        # Filter: minimum alternative alleles per strand
         if (min(int(alt_fwd), int(alt_rev)) == 0 and
                 min(int(ref_fwd), int(ref_rev)) != 0 and
                 strand_counts == 1 and int(alt_count) > 3):
             filter_criteria.append("Strand_imbalanced")
 
+        # Filter: minimum depth
         if int(depth_hq) < min_COV:
             filter_criteria.append("Low_Cov")
 
+        # Minimum alternative allele count filter
         if int(alt_count) < int(min_AC):
             filter_criteria.append("Low_AC")
 
+        # Filter: clustered variants
         if dist != "Inf" and int(dist) < min_DIST:
             filter_criteria.append("Clustered_Variant")
 
+        # Filter: High fraction of low quality bases
         if float(depth_hq) / float(depth) < 0.75:
             filter_criteria.append("Low_qual_pos")
 
+        # Filter: contamination = high number of third or fourth allele
         if float(alt_count_other) / (float(mm)) > 0.3 or float(out_adj) < 0.1:
             filter_criteria.append("Variant_contamination")
 
+        # Filter: Fisher strand bias
         if float(strand_bias) < 0.01 and strand_counts == 1:
             filter_criteria.append("Fisher_Strand")
 
+        # Final filter judgement (PASS if no filter criteria apply)
         if len(filter_criteria) == 0:
             concatenated_filter_string = "PASS"
         else:
@@ -148,8 +79,7 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, seq_upstream, seq_
         alt_base = '.'
         concatenated_filter_string = '.'
 
-    tsv = [alt_count, depth_hq, ab, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj,
-           str(seq_upstream_freq), str(seq_downstream_freq)]
+    tsv = [alt_count, depth_hq, ab, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj]
 
     variant_call = [ref_base, alt_base, tsv, concatenated_filter_string]
 
@@ -179,7 +109,7 @@ def print_vcf_header():
     ##FILTER=<ID=Error,Description="Alternative counts inside the expected error rate distribution">
     ##FILTER=<ID=Fisher_Strand,Description="Strand bias based on fisher test">
     ##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
-    ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outsite of the error rate distribution">
+    ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
     ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
     ##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts"
     ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
@@ -202,8 +132,8 @@ def print_vcf_header():
 
 # Write column names to tsv outfile
 def print_tsv_header():
-    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'Upstream_5', 'Downstream_5', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AB', 'P_VAL',
-                  'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'LC_Upstream', 'LC_Downstream', 'FILTER']
+    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AB', 'P_VAL',
+                  'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'Homopolymer', 'FILTER']
     tsv_header = '\t'.join(tsv_header)
     OUT_tsv.write(tsv_header + '\n')
 
@@ -252,25 +182,18 @@ def parse_pileup_statistics():
                 qual = '.'
                 dist = info_field[dist_index]
 
-                # Determine length of the current chromosome
-                chr_length = -1
-                if chr_lengths != {}:
-                    if chrom in chr_lengths.keys():
-                        chr_length = chr_lengths[chrom]
-
-                # Getting 5 bases up and downstream of focal locus
-                seq_up, seq_down = up_down_sequence(chrom, pos, 6, args.reference, chr_length)
-
                 # Read count info
                 call = info_field[all_index].split("|")
 
-                # print CHROM, POS
+                # Containers
                 ref = []
                 alt = []
                 tsv = []
+
+                # Apply variant filter method
                 filter_string = []
                 for variant in call:
-                    variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, mm, dp, dp_hq, dist, ref_total, seq_up, seq_down)
+                    variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, chrom, pos, mm, dp, dp_hq, dist, ref_total)
 
                     # Append variants
                     ref.append(variant_ref)
@@ -294,8 +217,9 @@ def parse_pileup_statistics():
                     for count in range(0, n):
                         ref_index = ref[count]
                         if len(ref_index) != len(reference_seq):
+
                             # Sample info
-                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, seq_upstream_freq, seq_downstream_freq = tsv[count]
+                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[count]
 
                             # Getting normalized alternative allele
                             alt_index = alt[count]
@@ -320,7 +244,7 @@ def parse_pileup_statistics():
                         else:
 
                             # Sample info
-                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, seq_upstream_freq, seq_downstream_freq = tsv[count]
+                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[count]
 
                             alt_index = alt[count]
                             alt_base.append(alt_index)
@@ -355,7 +279,7 @@ def parse_pileup_statistics():
                         format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
 
                         # Info column
-                        info_field = ['Variant_dist=' + str(dist), 'Upstream=' + str(seq_up), 'Downstream=' + str(seq_down), 'PValue=' + str(alt_count_p)]
+                        info_field = ['Variant_dist=' + str(dist), 'Upstream=' + 'PValue=' + str(alt_count_p)]
 
                         # VCF variant line
                         vcf_line = ['\t'.join(vcf_fields), filter_field[allele_idx], ';'.join(info_field), ':'.join(format_field),
@@ -363,9 +287,9 @@ def parse_pileup_statistics():
                         vcf_line = '\t'.join(vcf_line)
 
                         # TSV line
-                        tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), seq_up, seq_down, str(dp_hq), str(ref_total),
+                        tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), str(dp_hq), str(ref_total),
                                     str(alt_count_all[allele_idx]), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o,
-                                    out_adj, seq_upstream_freq, seq_downstream_freq, filter_field[allele_idx]]
+                                    out_adj, filter_field[allele_idx]]
                         tsv_line = '\t'.join(tsv_line)
 
                         if int(alt_count) > 0:
@@ -383,10 +307,10 @@ def parse_pileup_statistics():
                     filter_field = filter_string[0]
 
                     # Sample info
-                    alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, seq_upstream_freq, seq_downstream_freq = tsv[0]
+                    alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[0]
 
                     # Info column
-                    info_field = ['Variant_dist=' + str(dist), 'Upstream=' + str(seq_up), 'Downstream=' + str(seq_down), 'PValue=' + str(alt_count_p)]
+                    info_field = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
 
                     # Format column
                     format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
@@ -408,9 +332,8 @@ def parse_pileup_statistics():
                     vcf_line = '\t'.join(vcf_line)
 
                     # TSV line
-                    tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), seq_up, seq_down, str(dp_hq), str(ref_total),
-                                str(alt_count), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj,
-                                seq_upstream_freq, seq_downstream_freq, filter_field]
+                    tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), str(dp_hq), str(ref_total),
+                                str(alt_count), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, filter_field]
                     tsv_line = '\t'.join(tsv_line)
                     if int(alt_count) > 0:
                         OUT_vcf.write(vcf_line + '\n')
@@ -448,6 +371,7 @@ parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and
 parser.add_argument('-i', '--infile', type=str, help='Tsv table', required=True)
 parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id', required=False)
 parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file which table was build', required=True)
+parser.add_argument('-hom', '--homopolymer', type=str, help='File with homopolymer positions in reference genome', required=True)
 parser.add_argument('-o', '--outfile', type=str, help='Vcf output file', required=True)
 parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage', required=False)
 parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele', required=False)
@@ -463,17 +387,13 @@ args = parser.parse_args()
 input_file = args.infile
 sample_id = args.tumorid
 reference_file = args.reference
+homopolymer_file = args.homopolymer
 min_COV = args.min_COV
 min_AC = args.min_AC
 min_AF = args.min_AF
 min_DIST = args.min_DIST
 strand = args.strand
 MRD = []
-
-
-# Check temp folder
-if args.tmpdir is not None:
-    pybedtools.set_tempdir(args.tmpdir)
 
 
 # Open output files
@@ -483,20 +403,25 @@ OUT_vcf = open(vcf_outfile_name, 'w')
 OUT_tsv = open(tsv_outfile_name, 'w')
 
 
-# Load reference Fasta index to determine chr lengths
-chr_lengths = {}
-if Path(args.reference + ".fai").exists():
-    with open(args.reference + ".fai", "rt") as fasta_index_file:
-        for fasta_line in fasta_index_file.readlines():
-            split_line = fasta_line.split('\t')
-            chr_lengths[split_line[0].strip()] = int(split_line[1].strip())
-else:
-    print("WARNING: No FASTA index file found! Can't determine chromosome lengths.")
-
-
 # Print output headers and column names
 print_vcf_header()
 print_tsv_header()
+
+# Read homopolymer file
+homopolymer_positions = dict()
+with open(homopolymer_file) as hom_file:
+    for current_line in hom_file:
+        current_line = current_line.rstrip('\n')
+        split_line = current_line.split("\t")
+        chromosome = split_line[0]
+        position = int(split_line[1])
+
+        # Add new chromosome
+        if chromosome not in homopolymer_positions.keys():
+            homopolymer_positions[chromosome] = {}
+
+        # Add new homopolymer position
+        homopolymer_positions[chromosome][position] = 1
 
 
 # Parse the input file:

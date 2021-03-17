@@ -65,17 +65,10 @@ class Homopolymer:
             else:
                 # Check if last n bases are a homopolymer
                 homopolymer = self.count_max_nucleotide(current_seq)
-                for pos in range(position - self.min_homopolymer_length, position):
 
-                    # If position exists in homopolymer dictionary
-                    if pos in self.homopolymer_positions.keys():
-
-                        # and is currently labeled as non-homopolymer: overwrite with new current assessment
-                        if self.homopolymer_positions[pos] == 0:
-                            self.homopolymer_positions[pos] = homopolymer
-
-                    # Position is not in dictionary: add current assessment of homopolymer
-                    else:
+                # If homopolymer, label all positions overlapping homopolymer in dictionary
+                if homopolymer == 1:
+                    for pos in range(position - self.min_homopolymer_length, position):
                         self.homopolymer_positions[pos] = homopolymer
 
                 # Shift sequence by one nucleotide
@@ -88,7 +81,6 @@ class Homopolymer:
     def count_max_nucleotide(self, sequence):
         wc = Counter(sequence)
         most_common_base = wc.most_common(1)[0][1]
-        # frequency = most_common_base / self.min_homopolymer_length
 
         # Check if most common nucleotide forms a homopolymer
         if most_common_base >= (self.min_homopolymer_length - self.max_outliers):
@@ -97,8 +89,9 @@ class Homopolymer:
             return 0
 
 
-# Run pileup_parser
+# Run homopolymer finder
 def main():
+
     # Read parameters
     parser = argparse.ArgumentParser(description='Find all homopolymers of length n in reference sequence (fasta).')
     parser.add_argument('-r', '--ref', type=str, help='Reference fasta file.', required=True)
