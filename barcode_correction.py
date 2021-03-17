@@ -5,7 +5,6 @@ import argparse
 import sys
 import timeit
 import networkx as nx
-import numpy
 import pysam
 
 
@@ -151,34 +150,31 @@ def low_quality_base_check(qualities, min_bq):
 
 
 # Get consensus read qualities
-def consensus_quality(qualities, min_bq, errors, step):
+def consensus_quality(qualities, min_bq, errors):
+
     # Get number of bases with  good quality
     copies = len([x for x in range(0, len(qualities)) if qualities[x] >= min_bq])
 
     # Compute base qualities of consensus base
     max_qual = max(qualities)
-    new_qual = 0
     if max_qual < min_bq:
         new_qual = max_qual
 
     else:
-        # What is step?
-        if step == 1 or step == 2:
+        # Unreliable consensus labeled with quality 0: if 3 or more discordant bases, or more than 25% discordant bases
+        if (errors >= 1 and float(errors) / (copies + errors) > 0.25) or errors >= 3:
+            new_qual = 0
 
-            # Unreliable consensus labeled with quality 0: if 3 or more discordant bases, or more than 25% discordant bases
-            if (errors >= 1 and float(errors) / (copies + errors) > 0.25) or errors >= 3:
-                new_qual = 0
-
-            # Otherwise, the maximum quality value across PCR copies is used as new quality, with minimum of 30
-            else:
-                max_quality = max(qualities)
-                new_qual = max(30, max_quality)
+        # Otherwise, the maximum quality value across PCR copies is used as new quality, with minimum of 30
+        else:
+            max_quality = max(qualities)
+            new_qual = max(30, max_quality)
 
     return new_qual
 
 
 # Compute consensus sequence of reads with the same barcode
-def generate_consensus_read(reads, min_bq, step, set_n):
+def generate_consensus_read(reads, min_bq, set_n):
     consensus_seq = list()
     consensus_qual = list()
     consensus_read = reads[0]
@@ -187,7 +183,6 @@ def generate_consensus_read(reads, min_bq, step, set_n):
     read_names_list = list()
     reads_dict = {}
     flag_dict = {}
-    dp1_tag = list()
 
     color = ['230,242,255', '179,215,255', '128,187,255', '77,160,255', '26,133,255']
 
@@ -198,11 +193,8 @@ def generate_consensus_read(reads, min_bq, step, set_n):
         current_color = color[0]
 
         # Adding barcodes to tag in bam file
-        if step == 1:
-            consensus_read.tags += [('DP', count)]
-            consensus_read.tags += [('YC', current_color)]
-        elif step == 2:
-            consensus_read.tags += [('DF', count)]
+        consensus_read.tags += [('DP', count)]
+        consensus_read.tags += [('YC', current_color)]
 
         # Info about barcode groups
         log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
@@ -237,9 +229,6 @@ def generate_consensus_read(reads, min_bq, step, set_n):
 
             # Saving the amount of duplicates from first round of correction
             last_read = i
-
-            if step == 2:
-                dp1_tag.append(i.opt("DP"))
 
             # Adding reads to a dictionary to sort them in lexicographical order
             read_name = i.qname
@@ -286,7 +275,7 @@ def generate_consensus_read(reads, min_bq, step, set_n):
                 qualities = get_qualities(consensus_base, seq_dict[position], qual_dict[position])
 
                 if num_diff_bases < 3 and consensus_base_count > diff_count:
-                    consensus_quality_num = consensus_quality(qualities, min_bq, diff_count, step)
+                    consensus_quality_num = consensus_quality(qualities, min_bq, diff_count)
 
                     if set_n and consensus_quality_num == 0:
                         consensus_quality_num = qualities[0]
@@ -355,26 +344,11 @@ def generate_consensus_read(reads, min_bq, step, set_n):
         else:
             current_color = color[count - 1]
 
-        # Different correction type
-        if step == 1:
+        # Add DP tag
+        consensus_read.tags += [('DP', count)]
 
-            # Add DP tag
-            consensus_read.tags += [('DP', count)]
-
-            # Add color
-            consensus_read.tags += [('YC', current_color)]
-
-        elif step == 2:
-            dp1_value = int(round(numpy.median(dp1_tag)))
-
-            # Update DP tag
-            consensus_read.tags = update_tag(consensus_read.tags, ('DP', dp1_value))
-
-            # Add DF tag
-            consensus_read.tags += [('DF', count)]
-
-            # Update Color tag
-            consensus_read.tags = update_tag(consensus_read.tags, ('YC', current_color))
+        # Add color
+        consensus_read.tags += [('YC', current_color)]
 
         # Info about barcode groups
         log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
@@ -383,9 +357,10 @@ def generate_consensus_read(reads, min_bq, step, set_n):
     return consensus_read, log_info
 
 
-# Main method bundles argument parsing  and BAM file parsing
+# Main method bundles argument parsing and BAM file parsing
 # Example command line: python barcode_correction.py --infile PATH/TO/test.bam --outfile PATH/TO/corrected.test.bam --barcodes BOTH
 def main():
+
     # Read script parameters
     parser = argparse.ArgumentParser(description='Correcting BAM files using barcodes info')
     parser.add_argument('--infile', required=True, dest='infile', help='Input BAM file.')
@@ -397,8 +372,6 @@ def main():
                         help='Minimum base quality to be considered. Default = 30')
     parser.add_argument('--barcode_error', required=False, dest='barcode_error', type=int, default=0,
                         help='Maximum number of sequencing errors allowed in barcode sequence. Default = 0')
-    parser.add_argument('--step', required=False, dest='step', type=int, default=1, choices=[1, 2],
-                        help='Protocol step. 1: Unique barcode correction; 2: Family correction. Default = 1')
     parser.add_argument('--n', required=False, dest='n', action='store_true',
                         help='Use Ns instead of reducing base quality.')
 
@@ -426,7 +399,6 @@ def main():
 
     min_bq = args.minBQ
     errors = args.barcode_error
-    step = args.step
     set_n = args.n
 
     pos = 0
@@ -486,7 +458,7 @@ def main():
 
                         for barcode in barcode_dict:
                             # Printing consensus reads to a new bam file
-                            new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, step, set_n)
+                            new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
                             logfile.write(log_string)
                             outfile.write(new_read)
 
@@ -527,8 +499,7 @@ def main():
                     for pos2 in barcode_dict:
                         # printing consensus reads to a new bam file
                         for barcode in barcode_dict[pos2]:
-                            new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq,
-                                                                           step, set_n)
+                            new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
 
                             logfile.write(log_string)
                             outfile.write(new_read)
@@ -587,7 +558,7 @@ def main():
 
             for barcode in barcode_dict:
                 # Printing consensus reads to a new bam file
-                new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, step, set_n)
+                new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
 
                 logfile.write(log_string)
                 outfile.write(new_read)
@@ -599,7 +570,7 @@ def main():
 
             # printing consensus reads to a new bam file
             for barcode in barcode_dict[pos2]:
-                new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, step, set_n)
+                new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
 
                 logfile.write(log_string)
                 outfile.write(new_read)

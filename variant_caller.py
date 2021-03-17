@@ -22,6 +22,14 @@ def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
     # Get counts per strand
     alt_fwd, alt_rev, ref_fwd, ref_rev = strand_counts.split("-")
 
+    # Check homopolymer
+    homopolymer = 0
+    pos = int(pos)
+
+    if chrom in homopolymer_positions:
+        if pos in homopolymer_positions[chrom]:
+            homopolymer = 1
+
     # Set filter based on various thresholds
     if float(alt_count) > 0 and mm > 0:
         filter_criteria = []
@@ -31,10 +39,8 @@ def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
             filter_criteria.append("Error")
 
         # Filter: homopolymer
-        if chrom in homopolymer_positions:
-            if pos in homopolymer_positions[chrom]:
-                print(str(homopolymer_positions[chrom][pos]))
-                filter_criteria.append("Homopolymer")
+        if homopolymer == 1:
+            filter_criteria.append("Homopolymer")
 
         # Filter: minimum allele frequency
         if float(ab) < min_AF:
@@ -79,16 +85,250 @@ def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
         alt_base = '.'
         concatenated_filter_string = '.'
 
-    tsv = [alt_count, depth_hq, ab, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj]
+    tsv = [alt_count, depth_hq, ab, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj, homopolymer]
 
     variant_call = [ref_base, alt_base, tsv, concatenated_filter_string]
 
     return variant_call
 
 
+# Parse aggregated pileup statistics (tsv) file with all regions of interest and call variants
+def parse_pileup_statistics():
+
+    # Parse input file
+    with open(input_file) as f1:
+        for line in f1:
+            line = line.rstrip('\n')
+
+            # Ignore header lines
+            if line.startswith('##'):
+                continue
+
+            # Read column names of input file
+            elif line.startswith('CHROM'):
+                header_file = line
+                form = header_file.split('\t')
+
+                # Assign column names to indices
+                chrom_index = [i for i, x in enumerate(form) if x == "CHROM"][0]
+                pos_index = [i for i, x in enumerate(form) if x == "POS"][0]
+                dp_index = [i for i, x in enumerate(form) if x == "DP"][0]
+                dp_hq_index = [i for i, x in enumerate(form) if x == "DP_HQ"][0]
+                ref_fwd_index = [i for i, x in enumerate(form) if x == "REFf"][0]
+                ref_rev_index = [i for i, x in enumerate(form) if x == "REFr"][0]
+                dist_index = [i for i, x in enumerate(form) if x == "DIST"][0]
+                mm_index = [i for i, x in enumerate(form) if x == "MM"][0]
+                call_index = [i for i, x in enumerate(form) if x == "CALL"][0]
+
+                continue
+
+            # Parse rows with actual data
+            fields = line.split("\t")
+
+            # Assign values to common VCF columns
+            chrom = fields[chrom_index]
+            pos = fields[pos_index]
+            snv_id = '.'
+            ref_fwd = int(fields[ref_fwd_index])
+            ref_rev = int(fields[ref_rev_index])
+            ref_total = ref_fwd + ref_rev
+            mm = int(fields[mm_index])
+            dp = int(fields[dp_index])
+            dp_hq = int(fields[dp_hq_index])
+            qual = '.'
+            dist = fields[dist_index]
+
+            # Up to 3 possible alternative alleles per position
+            variant_candidates = fields[call_index].split("|")
+
+            # Containers
+            ref = []
+            alt = []
+            tsv = []
+
+            # Apply variant filter method
+            filter_string = []
+            for variant in variant_candidates:
+                variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, chrom, pos, mm, dp, dp_hq, dist, ref_total)
+
+                # Append variants
+                ref.append(variant_ref)
+                alt.append(variant_alt)
+                tsv.append(variant_tsv)
+                filter_string.append(variant_filter_string)
+
+            # Why is that important?
+            if len(ref) > 1:
+
+                # Getting ref. For both SNP, Deletion and Insertion, the longer reference will represent the original reference
+                reference_seq = max(ref, key=len)
+
+                filter_field = []
+                alt_base = []
+                alt_count_all = []
+                sample = []
+                p_val_list = []
+                n = len(ref)
+
+                for count in range(0, n):
+                    ref_index = ref[count]
+
+                    if len(ref_index) != len(reference_seq):
+
+                        # Sample info
+                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
+
+                        # Getting normalized alternative allele
+                        alt_index = alt[count]
+                        alt_temp = list(reference_seq)
+                        alt_temp[0] = alt_index
+                        alt_index = ''.join(alt_temp)
+                        alt_base.append(alt_index)
+                        alt_count_all.append(alt_count)
+
+                        if int(alt_count) > 0:
+                            genotype = alt_index
+                        else:
+                            genotype = reference_seq
+
+                        filter_field.append(filter_string[count])
+
+                        sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher),
+                                        str(alt_count_o), str(out_adj), str(alt_count_pad_j)]
+                        sample.append(':'.join(sample_index))
+
+                        p_val_list.append(float(alt_count_p))
+
+                    else:
+
+                        # Sample info
+                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
+
+                        alt_index = alt[count]
+                        alt_base.append(alt_index)
+                        alt_count_all.append(alt_count)
+
+                        if int(alt_count) > 0:
+                            genotype = alt_index
+                        else:
+                            genotype = reference_seq
+
+                        filter_field.append(filter_string[count])
+
+                        sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher),
+                                        str(alt_count_o), str(out_adj), str(alt_count_pad_j)]
+                        sample.append(':'.join(sample_index))
+
+                        p_val_list.append(float(alt_count_p))
+
+                # Check numbers?
+                if len(alt_base) != len(filter_field) or len(alt_base) != len(sample) or len(alt_base) != len(alt_count_all):
+                    raise ValueError("Number of alt alleles differs")
+
+                # Combine p-values of this site
+                p_merge = scipy.stats.combine_pvalues(p_val_list)[1]
+                MRD.append(float(p_merge))
+
+                # Split multi-allelic variants in single lines
+                for allele_idx in range(len(alt_base)):
+                    # Common vcf columns
+                    vcf_fields = [chrom, pos, snv_id, reference_seq, alt_base[allele_idx], qual]
+
+                    # Format column
+                    format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
+
+                    # Info column
+                    fields = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
+
+                    # VCF variant line
+                    vcf_line = ['\t'.join(vcf_fields), filter_field[allele_idx], ';'.join(fields), ':'.join(format_field), sample[allele_idx]]
+                    vcf_line = '\t'.join(vcf_line)
+
+                    # TSV line
+                    tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), str(dp_hq), str(ref_total),
+                                str(alt_count_all[allele_idx]), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher,
+                                alt_count_o, out_adj, homopolymer, filter_field[allele_idx]]
+                    tsv_line = '\t'.join(tsv_line)
+
+                    if int(alt_count) > 0:
+                        OUT_vcf.write(vcf_line + '\n')
+                        OUT_tsv.write(tsv_line + '\n')
+
+            # Length of ref is <= 1
+            else:
+
+                # Common vcf columns
+                reference_seq = ref[0]
+                alt_base = alt[0]
+                vcf_fields = [chrom, pos, snv_id, reference_seq, alt_base, qual]
+
+                # Filter column
+                filter_field = filter_string[0]
+
+                # Sample info
+                alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[0]
+
+                # Info column
+                fields = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
+
+                # Format column
+                format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
+
+                # Append p-val for MRD calculation
+                MRD.append(float(alt_count_p))
+
+                # Get genotype
+                if int(alt_count) > 0:
+                    genotype = alt_base
+                else:
+                    genotype = reference_seq
+
+                sample = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher),
+                          str(alt_count_o), str(out_adj),
+                          str(alt_count_pad_j)]
+
+                # Compile VCF entry
+                vcf_line = ['\t'.join(vcf_fields), filter_field, ';'.join(fields), ':'.join(format_field), ':'.join(sample)]
+                vcf_line = '\t'.join(vcf_line)
+
+                # Compile TSV entry
+                tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), str(dp_hq), str(ref_total),
+                            str(alt_count), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher,
+                            alt_count_o, out_adj, str(homopolymer), filter_field]
+                tsv_line = '\t'.join(tsv_line)
+
+                # Print variant candidate if at least one alternative read has been observed
+                if int(alt_count) > 0:
+                    OUT_vcf.write(vcf_line + '\n')
+                    OUT_tsv.write(tsv_line + '\n')
+
+
+# Compute and write Minimal Residual Disease probability
+def compute_mrd():
+    out3 = str(Path(vcf_outfile_name).with_suffix('.mrd'))
+    out_mrd = open(out3, 'w')
+
+    # Header
+    mrd_header = ['#MRD_log10', 'MRD_pval']
+    mrd_header = '\t'.join(mrd_header)
+    out_mrd.write(mrd_header + '\n')
+
+    # Getting MRD values
+    numpy.seterr(divide='ignore')
+    val_mrd_temp = scipy.stats.combine_pvalues(MRD)[1]
+    val_mrd_temp2 = max(1e-20, val_mrd_temp)
+    val_mrd = str(format(val_mrd_temp2, "5.2e"))
+    val_mrd_log = str(round(numpy.log10(float(val_mrd)) * -1, 4))
+
+    # Printing line
+    line = [val_mrd_log, val_mrd]
+    line = '\t'.join(line)
+    out_mrd.write(line + '\n')
+    out_mrd.close()
+
+
 # Print VCF header and column names
 def print_vcf_header():
-
     # Define VCF header
     date = time.strftime("%d/%m/%Y")  # dd/mm/yyyy format
     vcf_format = "##fileformat=VCFv4.1"
@@ -138,249 +378,27 @@ def print_tsv_header():
     OUT_tsv.write(tsv_header + '\n')
 
 
-# Parse aggregated pileup statistics (tsv) file with all regions of interest and call variants
-def parse_pileup_statistics():
-
-    # Parse aggregated pileup statistics (tsv) file with all regions of interest and call variants
-    with open(input_file) as f1:
-        for line in f1:
-            line = line.rstrip('\n')
-
-            # Ignore header lines
-            if line.startswith('##'):
-                continue
-
-            # Read column names and content of input file
-            elif line.startswith('CHROM'):
-                header_file = line
-                form = header_file.split('\t')
-
-                chrom_index = [i for i, x in enumerate(form) if x == "CHROM"][0]
-                pos_index = [i for i, x in enumerate(form) if x == "POS"][0]
-                dp_index = [i for i, x in enumerate(form) if x == "DP"][0]
-                dp_hq_index = [i for i, x in enumerate(form) if x == "DP_HQ"][0]
-                ref_fwd_index = [i for i, x in enumerate(form) if x == "REFf"][0]
-                ref_rev_index = [i for i, x in enumerate(form) if x == "REFr"][0]
-                dist_index = [i for i, x in enumerate(form) if x == "DIST"][0]
-                mm_index = [i for i, x in enumerate(form) if x == "MM"][0]
-                all_index = [i for i, x in enumerate(form) if x == "CALL"][0]
-
-            # Parse rows with actual loci data
-            else:
-                info_field = line.split("\t")
-
-                # Assign values to common VCF columns
-                chrom = info_field[chrom_index]
-                pos = info_field[pos_index]
-                snv_id = '.'
-                ref_fwd = int(info_field[ref_fwd_index])
-                ref_rev = int(info_field[ref_rev_index])
-                ref_total = ref_fwd + ref_rev
-                mm = int(info_field[mm_index])
-                dp = int(info_field[dp_index])
-                dp_hq = int(info_field[dp_hq_index])
-                qual = '.'
-                dist = info_field[dist_index]
-
-                # Read count info
-                call = info_field[all_index].split("|")
-
-                # Containers
-                ref = []
-                alt = []
-                tsv = []
-
-                # Apply variant filter method
-                filter_string = []
-                for variant in call:
-                    variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, chrom, pos, mm, dp, dp_hq, dist, ref_total)
-
-                    # Append variants
-                    ref.append(variant_ref)
-                    alt.append(variant_alt)
-                    tsv.append(variant_tsv)
-                    filter_string.append(variant_filter_string)
-
-                if len(ref) > 1:
-
-                    # Getting ref. For both SNP, Deletion and Insertion, the longer reference will represent the original reference
-                    reference_seq = max(ref, key=len)
-
-                    filter_field = []
-                    alt_base = []
-                    alt_count_all = []
-                    sample = []
-
-                    n = len(ref)
-
-                    p_val_list = []
-                    for count in range(0, n):
-                        ref_index = ref[count]
-                        if len(ref_index) != len(reference_seq):
-
-                            # Sample info
-                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[count]
-
-                            # Getting normalized alternative allele
-                            alt_index = alt[count]
-                            alt_temp = list(reference_seq)
-                            alt_temp[0] = alt_index
-                            alt_index = ''.join(alt_temp)
-                            alt_base.append(alt_index)
-                            alt_count_all.append(alt_count)
-
-                            if int(alt_count) > 0:
-                                genotype = alt_index
-                            else:
-                                genotype = reference_seq
-
-                            filter_field.append(filter_string[count])
-
-                            sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher), str(alt_count_o), str(out_adj), str(alt_count_pad_j)]
-                            sample.append(':'.join(sample_index))
-
-                            p_val_list.append(float(alt_count_p))
-
-                        else:
-
-                            # Sample info
-                            alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[count]
-
-                            alt_index = alt[count]
-                            alt_base.append(alt_index)
-                            alt_count_all.append(alt_count)
-
-                            if int(alt_count) > 0:
-                                genotype = alt_index
-                            else:
-                                genotype = reference_seq
-
-                            filter_field.append(filter_string[count])
-
-                            sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher), str(alt_count_o), str(out_adj), str(alt_count_pad_j)]
-                            sample.append(':'.join(sample_index))
-
-                            p_val_list.append(float(alt_count_p))
-
-                    # Get number of alternative alleles
-                    if len(alt_base) != len(filter_field) or len(alt_base) != len(sample) or len(alt_base) != len(alt_count_all):
-                        raise ValueError("Number of alt alleles differs")
-
-                    # Combine p-values of this site
-                    p_merge = scipy.stats.combine_pvalues(p_val_list)[1]
-                    MRD.append(float(p_merge))
-
-                    # Split multi-allelic variants in single lines
-                    for allele_idx in range(len(alt_base)):
-                        # Common vcf columns
-                        vcf_fields = [chrom, pos, snv_id, reference_seq, alt_base[allele_idx], qual]
-
-                        # Format column
-                        format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
-
-                        # Info column
-                        info_field = ['Variant_dist=' + str(dist), 'Upstream=' + 'PValue=' + str(alt_count_p)]
-
-                        # VCF variant line
-                        vcf_line = ['\t'.join(vcf_fields), filter_field[allele_idx], ';'.join(info_field), ':'.join(format_field),
-                                    sample[allele_idx]]
-                        vcf_line = '\t'.join(vcf_line)
-
-                        # TSV line
-                        tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), str(dp_hq), str(ref_total),
-                                    str(alt_count_all[allele_idx]), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o,
-                                    out_adj, filter_field[allele_idx]]
-                        tsv_line = '\t'.join(tsv_line)
-
-                        if int(alt_count) > 0:
-                            OUT_vcf.write(vcf_line + '\n')
-                            OUT_tsv.write(tsv_line + '\n')
-
-                else:
-
-                    # Common vcf columns
-                    reference_seq = ref[0]
-                    alt_base = alt[0]
-                    vcf_fields = [chrom, pos, snv_id, reference_seq, alt_base, qual]
-
-                    # Filter column
-                    filter_field = filter_string[0]
-
-                    # Sample info
-                    alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj = tsv[0]
-
-                    # Info column
-                    info_field = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
-
-                    # Format column
-                    format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
-
-                    # Append p-val for MRD calculation
-                    MRD.append(float(alt_count_p))
-
-                    # Get genotype
-                    if int(alt_count) > 0:
-                        genotype = alt_base
-                    else:
-                        genotype = reference_seq
-
-                    sample = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher), str(alt_count_o), str(out_adj),
-                              str(alt_count_pad_j)]
-
-                    # VCF variant line
-                    vcf_line = ['\t'.join(vcf_fields), filter_field, ';'.join(info_field), ':'.join(format_field), ':'.join(sample)]
-                    vcf_line = '\t'.join(vcf_line)
-
-                    # TSV line
-                    tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), str(dp_hq), str(ref_total),
-                                str(alt_count), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, filter_field]
-                    tsv_line = '\t'.join(tsv_line)
-                    if int(alt_count) > 0:
-                        OUT_vcf.write(vcf_line + '\n')
-                        OUT_tsv.write(tsv_line + '\n')
-
-
-# Compute and write Minimal Residual Disease probability
-def compute_mrd():
-    out3 = str(Path(vcf_outfile_name).with_suffix('.mrd'))
-    out_mrd = open(out3, 'w')
-
-    # Header
-    mrd_header = ['#MRD_log10', 'MRD_pval']
-    mrd_header = '\t'.join(mrd_header)
-    out_mrd.write(mrd_header + '\n')
-
-    # Getting MRD values
-    numpy.seterr(divide='ignore')
-    val_mrd_temp = scipy.stats.combine_pvalues(MRD)[1]
-    val_mrd_temp2 = max(1e-20, val_mrd_temp)
-    val_mrd = str(format(val_mrd_temp2, "5.2e"))
-    val_mrd_log = str(round(numpy.log10(float(val_mrd)) * -1, 4))
-
-    # Printing line
-    line = [val_mrd_log, val_mrd]
-    line = '\t'.join(line)
-    out_mrd.write(line + '\n')
-    out_mrd.close()
-
-
-# Main method
+# Main method ---------------------------------------------------------------------------------------------
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and labels')
 parser.add_argument('-i', '--infile', type=str, help='Tsv table', required=True)
 parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id', required=False)
 parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file which table was build', required=True)
-parser.add_argument('-hom', '--homopolymer', type=str, help='File with homopolymer positions in reference genome', required=True)
+parser.add_argument('-hom', '--homopolymer', type=str, help='File with homopolymer positions in reference genome',
+                    required=True)
 parser.add_argument('-o', '--outfile', type=str, help='Vcf output file', required=True)
 parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage', required=False)
-parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele', required=False)
-parser.add_argument('-variant_dist', '--min_DIST', type=int, default=20, help='Minimum distance allowed between variants (to avoid clustered errors)', required=False)
-parser.add_argument('-str', '--strand', type=int, choices=[0, 1], default=1, help='Strand bias test (Fisher test). 0 for turn it off', required=False)
+parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele',
+                    required=False)
+parser.add_argument('-variant_dist', '--min_DIST', type=int, default=20,
+                    help='Minimum distance allowed between variants (to avoid clustered errors)', required=False)
+parser.add_argument('-str', '--strand', type=int, choices=[0, 1], default=1,
+                    help='Strand bias test (Fisher test). 0 for turn it off', required=False)
 parser.add_argument('-af', '--min_AF', type=float, default=0, help='Minimum allele frequency allowed', required=False)
-parser.add_argument('-mrd', '--mrd', type=int, choices=[0, 1], default=1, help='Print Minimal Residual Disease [Default = 1]', required=False)
+parser.add_argument('-mrd', '--mrd', type=int, choices=[0, 1], default=1,
+                    help='Print Minimal Residual Disease [Default = 1]', required=False)
 parser.add_argument('-tmpdir', '--tmpdir', default=None, help='Folder for temp files', required=False)
-
 
 # Store arguments
 args = parser.parse_args()
@@ -402,15 +420,16 @@ tsv_outfile_name = str(Path(vcf_outfile_name).with_suffix('.tsv'))
 OUT_vcf = open(vcf_outfile_name, 'w')
 OUT_tsv = open(tsv_outfile_name, 'w')
 
-
 # Print output headers and column names
 print_vcf_header()
 print_tsv_header()
+
 
 # Read homopolymer file
 homopolymer_positions = dict()
 with open(homopolymer_file) as hom_file:
     for current_line in hom_file:
+
         current_line = current_line.rstrip('\n')
         split_line = current_line.split("\t")
         chromosome = split_line[0]

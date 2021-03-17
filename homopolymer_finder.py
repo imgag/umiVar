@@ -14,7 +14,7 @@ class Homopolymer:
         self.min_homopolymer_length = min_homopolymer_length
         self.max_outliers = max_outliers
         self.chromosome = ''
-        self.chr_sequence = ''
+        self.chr_array = []
         self.homopolymer_positions = dict()
 
     # Parse the fasta file
@@ -28,28 +28,26 @@ class Homopolymer:
                 if line.startswith('>'):
 
                     # Print homopolymers for previous chromosome
+                    self.find_homopolymers()
                     for key, value in sorted(self.homopolymer_positions.items(), key=lambda x: x[0]):
-                        if value == 1:
-                            print("{}\t{}".format(self.chromosome, key))
+                        print("{}\t{}".format(self.chromosome, key))
 
                     # Reset containers
-                    self.chr_sequence = ''
+                    self.chr_array = []
                     self.homopolymer_positions = dict()
 
                     # Read new chromosome name
                     split_header_line = line.split(" ")
                     self.chromosome = split_header_line[0][1:]
-                    self.chr_sequence = ''
 
                 else:
-                    self.chr_sequence += line
-
-        self.find_homopolymers()
+                    a = list(line)
+                    self.chr_array += a
 
         # Print homopolymers of the last chromosome
+        self.find_homopolymers()
         for key, value in sorted(self.homopolymer_positions.items(), key=lambda x: x[0]):
-            if value == 1:
-                print("{}\t{}".format(self.chromosome, key))
+            print("{}\t{}".format(self.chromosome, key))
 
     # Find homopolymer sequences in a chromosome
     def find_homopolymers(self):
@@ -57,13 +55,12 @@ class Homopolymer:
         current_seq = ''
 
         # Parse sequence of chromosome
-        for i in self.chr_sequence:
+        for i in self.chr_array:
 
             # Store last n nucleotides of reference sequence
             if len(current_seq) < self.min_homopolymer_length:
                 current_seq += i
             else:
-                # Check if last n bases are a homopolymer
                 homopolymer = self.count_max_nucleotide(current_seq)
 
                 # If homopolymer, label all positions overlapping homopolymer in dictionary
@@ -79,6 +76,12 @@ class Homopolymer:
 
     # Identify the most common nucleotide in sequence and label homopolymers
     def count_max_nucleotide(self, sequence):
+
+        # Ignore sequences with Ns
+        if 'N' in sequence:
+            return 0
+
+        # Count most common sequence
         wc = Counter(sequence)
         most_common_base = wc.most_common(1)[0][1]
 
