@@ -365,9 +365,8 @@ def main():
     parser = argparse.ArgumentParser(description='Correcting BAM files using barcodes info')
     parser.add_argument('--infile', required=True, dest='infile', help='Input BAM file.')
     parser.add_argument('--outfile', required=True, dest='outfile', help='Output BAM file.')
-    parser.add_argument('--barcodes', required=False, dest='barcodes', type=str, choices=['BEGINNING', 'END', 'BOTH'],
-                        default='BOTH',
-                        help='Barcodes to use. BEGINNING = Barcode 1; END = Barcode 2; BOTH = Barcode 1 and 2. Default = BOTH')
+    parser.add_argument('--barcodes', required=False, dest='barcodes', choices=['START', 'END', 'BOTH'], default='BOTH',
+                        help='Barcode position: START = 5\' barcode; END = 3\' barcode; BOTH = 5\' and 3\' barcodes. Default = BOTH')
     parser.add_argument('--minBQ', required=False, dest='minBQ', type=int, default=10,
                         help='Minimum base quality to be considered. Default = 30')
     parser.add_argument('--barcode_error', required=False, dest='barcode_error', type=int, default=0,
