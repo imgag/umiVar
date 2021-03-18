@@ -14,7 +14,7 @@ numpy.seterr(divide='ignore')
 def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
 
     # Declare variables
-    gt, sig, alt_count, ab, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
+    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
 
     # Reference and alternative base for this variant
     ref_base, alt_base = gt.split(">")
@@ -43,7 +43,7 @@ def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
             filter_criteria.append("Homopolymer")
 
         # Filter: minimum allele frequency
-        if float(ab) < min_AF:
+        if float(af) < min_AF:
             filter_criteria.append("Low_AF")
 
         # Filter: minimum alternative alleles per strand
@@ -85,7 +85,7 @@ def variant_filter(variant, chrom, pos, mm, depth, depth_hq, dist, ref_t):
         alt_base = '.'
         concatenated_filter_string = '.'
 
-    tsv = [alt_count, depth_hq, ab, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj, homopolymer]
+    tsv = [alt_count, depth_hq, af, ref_t, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj, homopolymer]
 
     variant_call = [ref_base, alt_base, tsv, concatenated_filter_string]
 
@@ -235,7 +235,7 @@ def parse_pileup_statistics():
                     vcf_fields = [chrom, pos, snv_id, reference_seq, alt_base[allele_idx], qual]
 
                     # Format column
-                    format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
+                    format_field = ["GT", "Alt_Count", "DP", "AF", "Strand", "FS", "VCB", "Pvcb", "Perror"]
 
                     # Info column
                     fields = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
@@ -247,7 +247,7 @@ def parse_pileup_statistics():
                     # TSV line
                     tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), str(dp_hq), str(ref_total),
                                 str(alt_count_all[allele_idx]), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher,
-                                alt_count_o, out_adj, homopolymer, filter_field[allele_idx]]
+                                alt_count_o, out_adj, str(homopolymer), filter_field[allele_idx]]
                     tsv_line = '\t'.join(tsv_line)
 
                     if int(alt_count) > 0:
@@ -272,7 +272,7 @@ def parse_pileup_statistics():
                 fields = ['Variant_dist=' + str(dist), 'PValue=' + str(alt_count_p)]
 
                 # Format column
-                format_field = ["GT", "Alt_Count", "DP", "AB", "Strand", "FS", "VCB", "Pvcb", "Perror"]
+                format_field = ["GT", "Alt_Count", "DP", "AF", "Strand", "FS", "VCB", "Pvcb", "Perror"]
 
                 # Append p-val for MRD calculation
                 MRD.append(float(alt_count_p))
@@ -353,7 +353,7 @@ def print_vcf_header():
     ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
     ##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts"
     ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
-    ##FORMAT=<ID=AB,Number=1,Type=Float,Description="Allele balance">
+    ##FORMAT=<ID=AF,Number=1,Type=Float,Description="Alternative allele fraction">
     ##FORMAT=<ID=Strand,Number=2,Type=String,Description="Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse">
     ##FORMAT=<ID=FS,Number=1,Type=Float,Description="Fisher strand test (q-value)">
     ##FORMAT=<ID=VCB,Number=1,Type=Integer,Description="Variant Count bias, number of other different alternative alleles found">
@@ -372,7 +372,7 @@ def print_vcf_header():
 
 # Write column names to tsv outfile
 def print_tsv_header():
-    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AB', 'P_VAL',
+    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AF', 'P_VAL',
                   'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'Homopolymer', 'FILTER']
     tsv_header = '\t'.join(tsv_header)
     OUT_tsv.write(tsv_header + '\n')
