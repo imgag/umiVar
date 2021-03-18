@@ -122,7 +122,7 @@ for file in sorted(glob.glob(temp_directory + '/dedup*.bam')):
 
     # Index BAM files
     try:
-        subprocess.run("/Users/admin/tools/samtools/samtools index " + file, shell=True)
+        subprocess.run("samtools index " + file, shell=True)
     except subprocess.CalledProcessError as error:
         print(error)
 
@@ -131,7 +131,7 @@ for file in sorted(glob.glob(temp_directory + '/dedup*.bam')):
     f_tsv = file.replace('.bam', '.tsv')
 
     # Generate pileup and transform
-    mpileup_command = '/Users/admin/tools/samtools/samtools mpileup' + \
+    mpileup_command = 'samtools mpileup' + \
                       ' -d 0 ' + \
                       ' -f ' + arguments.ref + \
                       ' -Q 1 ' + \
@@ -139,7 +139,7 @@ for file in sorted(glob.glob(temp_directory + '/dedup*.bam')):
                       ' -o ' + f_pileup
 
     if arguments.bed != '':
-        mpileup_command = '/Users/admin/tools/samtools/samtools mpileup' + \
+        mpileup_command = 'samtools mpileup' + \
                           ' -d 0 ' + \
                           ' -f ' + arguments.ref + \
                           ' -l ' + arguments.bed + \
