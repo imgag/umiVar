@@ -14,10 +14,15 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(survcomp)) # Bioconductor 
 
 
+#####################################################
+# Functions
+#####################################################
 
-# Variant calling functions
-# FUNCTION
-
+#--------------------
+# Functions to obtain p-value
+# Based on parameters alpha and beta provided
+# For beta-binomial distribution
+#--------------------
 ### Compute p-value
 P_VAL <- function(ALT_COUNT, DP_HQ, a, b){
   if (length(ALT_COUNT) > 0){
@@ -36,25 +41,29 @@ P_VAL_Var <- function(SNP, a, b){
   }
 }
 
-
-### TODO: add documentation
+#--------------------
+# Functions to estimate the distance between SNVs
+#--------------------
+# Sub-function
 dist_SNP2 <- function(CHROM,POS,CALLS){
   distances <- abs(CALLS$POS - POS)
-  distances <- distances[distances > 0]
-  CLOSEST_SNP <- min(distances, na.rm = T)
+  distances <- distances[distances > 0] # Ignore the variant we are analysing
+  CLOSEST_SNP <- min(distances, na.rm = T) # Get the distance to the closest potential mutation
   return(CLOSEST_SNP)
 }
 
-
-### TODO: add documentation
+# Main function
 dist_SNP <- function(CALLS, SOMATIC_LIKE){
   FINAL <- ''
   NAMES <- names(table(CALLS$CHROM))
+  # Computed for each chromosome
   for (chrom in NAMES){
     CALLS2 <- CALLS[CALLS$CHROM == chrom,]
-    SOMATIC_LIKE2 <- SOMATIC_LIKE[SOMATIC_LIKE$CHROM == chrom,]
-    
+    # Get the coordinates of the potential somatic calls
+    SOMATIC_LIKE2 <- SOMATIC_LIKE[SOMATIC_LIKE$CHROM == chrom,] 
+    # For each candidate site, get the distance to the closest potential SNV
     CALLS2$DIST <- apply(CALLS2, 1, function(x)  dist_SNP2(x["CHROM"], as.numeric(x["POS"]), SOMATIC_LIKE2))
+    # Append the results of the chromosome to a new df
     FINAL <- rbind(FINAL, CALLS2)  
   }
   
@@ -63,11 +72,12 @@ dist_SNP <- function(CALLS, SOMATIC_LIKE){
   return(FINAL)
 }
 
-
-### TODO: add documentation
+#--------------------
+# Function to perform the counting of the reference bases
+#--------------------
 COUNT <- function(DP1,DP2,DP3,DP4){
   # Sites
-  # columns of CRHROM,POS and REF from deduplication files are stored in unique variables
+  # columns of CRHROM,POS and REF from de-duplication files are stored in unique variables
   unique1 <- unique(DP1[,c('CHROM', 'POS', 'REF')])
   unique2 <- unique(DP2[,c('CHROM', 'POS', 'REF')])
   unique3 <- unique(DP3[,c('CHROM', 'POS', 'REF')])
@@ -80,7 +90,8 @@ COUNT <- function(DP1,DP2,DP3,DP4){
   ALL <- unique(ALL) # remove duplicated elements/rows
   
   # T and A in nT, C and G in nG
-  nT <- nrow(ALL[(ALL$REF %in% c('T','A')),]) #%in% identifies if an element is present in another
+  # Consider in the same count the base and its complementary
+  nT <- nrow(ALL[(ALL$REF %in% c('T','A')),])
   nG <- nrow(ALL[(ALL$REF %in% c('G','C')),])
   
   return(c(nT,nG))
@@ -150,7 +161,10 @@ COLLAPSE <- function(DATA){
 }
 
 
-### TODO: add documentation
+#--------------------
+# Main function for beta-binomial computation
+# This function is run independently for each DP*
+#--------------------
 CALLING <- function(DATA, params, ALL_SITES){
   ALT_COLS <- c('A','C','T','G','DEL','INS')
   
@@ -160,13 +174,12 @@ CALLING <- function(DATA, params, ALL_SITES){
   CALLS <- DATA[DATA$MM > 0,]
   CALLS_ZERO <- DATA[DATA$MM <= 0,]
   
+  # Split sites based on the reference base
+  # Different nucleotide changes have different beta-binomial parameters 
   CALLS_A <- CALLS[CALLS$REF == 'A',]
   CALLS_C <- CALLS[CALLS$REF == 'C',]
   CALLS_T <- CALLS[CALLS$REF == 'T',]
   CALLS_G <- CALLS[CALLS$REF == 'G',]
-  
-  
-  
   
   # FOR A in REFERENCE
   if (nrow(CALLS_A) > 0){
@@ -276,129 +289,14 @@ CALLING <- function(DATA, params, ALL_SITES){
   
   VARIANTS <- rbind(CALLS_A, CALLS_C, CALLS_T, CALLS_G, CALLS_ZERO)
   
-  #VARIANTS <- VARIANTS[paste(VARIANTS$CHROM, VARIANTS$POS, sep = '-') %in%  paste(ALL_SITES$CHROM, ALL_SITES$POS, sep = '-'),]
   return (VARIANTS)
 }
 
-
-### TODO: add documentation
-CALLING_2 <- function(DATA, params){
-  ## NUCLEOTIDE CHANGES
-  TG <- c("T>G","A>C")
-  TA <- c("T>A","A>T")
-  TC <- c("T>C","A>G")
-  GT <- c("G>T","C>A")
-  GA <- c("G>A","C>T")
-  GC <- c("G>C","C>G")
-  
-  # nT <- nrow(DATA[(DATA$REF %in% c('T','A')) |
-  #                   (DATA$REF %in% c('T','A') & nchar(DATA$ALT) > 1) |
-  #                   (DATA$ALT %in% c('T','A') & nchar(DATA$REF) > 1),])
-  # 
-  # nG <- nrow(DATA[(DATA$REF %in% c('G','C')) |
-  #                   (DATA$REF %in% c('G','C') & nchar(DATA$ALT) > 1) |
-  #                   (DATA$ALT %in% c('G','C') & nchar(DATA$REF) > 1),])
-  
-  DATA$AB <- DATA$ALT_COUNT/DATA$DP_HQ
-  CALLS <- DATA[DATA$ALT_COUNT > 0,]
-  CALLS_ZERO <- DATA[DATA$ALT_COUNT == 0,]
-  
-  # Groups of nt changes
-  CALLS_TG <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  TG,]
-  CALLS_TA <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  TA,]
-  CALLS_TC <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  TC,]
-  CALLS_GT <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  GT,]
-  CALLS_GA <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  GA,]
-  CALLS_GC <- CALLS[paste(CALLS$REF,CALLS$ALT,sep='>') %in%  GC,]
-  
-  #### FOR GA group
-  CALLS_GA$P_VAL <- P_VAL(CALLS_GA, params[params$Param == 'Alpha','GA'], params[params$Param == 'Beta','GA'])
-  #CALLS_GA$P_VAL_adj <- p.adjust(CALLS_GA$P_VAL, method = "fdr", n = nG)
-  
-  #### FOR GC group
-  CALLS_GC$P_VAL <- P_VAL(CALLS_GC, params[params$Param == 'Alpha','GC'], params[params$Param == 'Beta','GC'])
-  #CALLS_GC$P_VAL_adj <- p.adjust(CALLS_GC$P_VAL, method = "fdr", n = nG)
-  
-  
-  #### FOR GT group
-  CALLS_GT$P_VAL <- P_VAL(CALLS_GT, params[params$Param == 'Alpha','GT'], params[params$Param == 'Beta','GT'])
-  #CALLS_GT$P_VAL_adj <- p.adjust(CALLS_GT$P_VAL, method = "fdr", n = nG)
-  
-  
-  #### FOR TA group
-  CALLS_TA$P_VAL <- P_VAL(CALLS_TA, params[params$Param == 'Alpha','TA'], params[params$Param == 'Beta','TA'])
-  #CALLS_TA$P_VAL_adj <- p.adjust(CALLS_TA$P_VAL, method = "fdr", n = nT)
-  
-  
-  #### FOR TC group
-  CALLS_TC$P_VAL <- P_VAL(CALLS_TC, params[params$Param == 'Alpha','TC'], params[params$Param == 'Beta','TC'])
-  #CALLS_TC$P_VAL_adj <- p.adjust(CALLS_TC$P_VAL, method = "fdr", n = nT)
-  
-  
-  #### FOR TG group
-  CALLS_TG$P_VAL <- P_VAL(CALLS_TG, params[params$Param == 'Alpha','TG'], params[params$Param == 'Beta','TG'])
-  #CALLS_TG$P_VAL_adj <- p.adjust(CALLS_TG$P_VAL, method = "fdr", n = nT)
-  
-  # Merge SNP calls
-  SNP <- rbind(CALLS_GA, CALLS_GC, CALLS_GT, CALLS_TA, CALLS_TC, CALLS_TG)
-  
-  
-  
-  
-  
-  ############
-  #### Indel Calling
-  ############
-  
-  Indel_T <- CALLS[(CALLS$REF %in% c('T','A') & nchar(CALLS$ALT) > 1 & CALLS$ALT_COUNT > 0) |
-                     (CALLS$ALT %in% c('T','A') & nchar(CALLS$REF) > 1 & CALLS$ALT_COUNT > 0),]
-  
-  Indel_G <- CALLS[(CALLS$REF %in% c('G','C') & nchar(CALLS$ALT) > 1 & CALLS$ALT_COUNT > 0) |
-                     (CALLS$ALT %in% c('G','C') & nchar(CALLS$REF) > 1 & CALLS$ALT_COUNT > 0),]
-  
-  # Indel_T
-  Indel_T$P_VAL <- P_VAL(Indel_T, params[params$Param == 'Alpha','Indel_A'], params[params$Param == 'Beta','Indel_A'])
-  #Indel_T$P_VAL_adj <- p.adjust(Indel_T$P_VAL, method = "fdr", n = nT)
-  
-  # Indel_G
-  Indel_G$P_VAL <- P_VAL(Indel_G, params[params$Param == 'Alpha','Indel_G'], params[params$Param == 'Beta','Indel_G'])
-  #Indel_G$P_VAL_adj <- p.adjust(Indel_G$P_VAL, method = "fdr", n = nG)
-  
-  ############
-  #### Merge indels and SNPs
-  ############
-  
-  #### TO BE DONE
-  VARIANTS_1 <- rbind(SNP,Indel_T,Indel_G)
-  
-  if (nrow(CALLS_ZERO) > 0){
-    CALLS_ZERO$P_VAL <- 1
-  } else {
-    CALLS_ZERO$P_VAL <- numeric(0)
-  }
-  
-  VARIANTS <- rbind(VARIANTS_1, CALLS_ZERO)
-  #VARIANTS[is.na(VARIANTS$Start_End_count),]$Start_End_count <- 0
-  
-  # Transform all columns to numeric
-  COLS <- c('ALT_COUNT', 'DP','DP_HQ', 'Alt_qual', 'Ref_fwd', 'Ref_rev', 'Alt_fwd', 'Alt_rev', 'Start_End_count', 'VariantCountBias', 'N_count', 'Lq_alt_count')
-  
-  for (i in COLS){
-    VARIANTS[,i] <- as.numeric(as.character(VARIANTS[,i]))
-  }
-  
-  return (VARIANTS)
-}
-
-### TODO: add documentation
-estBetaParams <- function(mu, var) {
-  alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
-  beta <- alpha * (1 / mu - 1)
-  return(params = list(alpha = alpha, beta = beta))
-}
-
- 
-### TODO: add documentation
+#--------------------
+# Functions to estimate beta-binomial parameters
+#--------------------
+# 1. Main alpha-beta parameters estimation function
+# Alternative counts versus number of trials (high-quality coverage = DP_HQ)
 MODEL_BETABIN_DP_DP <- function(DATA){
   result <- tryCatch({mle2(ALT_COUNT~dbetabinom.ab(size=DP_HQ,shape1,shape2), ## mle2: maximum likelihood estimation n=1
                            data=DATA,
@@ -413,10 +311,19 @@ MODEL_BETABIN_DP_DP <- function(DATA){
   return (c(PARAM1, PARAM2))  
 } 
 
+# 2. Alternative alpha-beta parameters estimation function
+estBetaParams <- function(mu, var) {
+  alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
+  beta <- alpha * (1 / mu - 1)
+  return(params = list(alpha = alpha, beta = beta))
+}
 
-### TODO: add documentation
+#---------------------------
+# Function to perform the last step of the variant calling
+# Merge all results and obtain values for the vcf contruction
+#---------------------------
 CALL <- function(LINE, INDEL, num_sites, Ps){
-  LAT <- c("A", "C", "T", "G", "INS", "DEL")
+  alt <- c("A", "C", "T", "G", "INS", "DEL")
   P <- c("PA", "PC", "PT", "PG", "PINS", "PDEL", "PINSo", "PDELo")
   P2 <- c("PA", "PC", "PT", "PG", "PINS", "PDEL")
   P_adj <- c("PA_adj", "PC_adj", "PT_adj", "PG_adj", "PINS_adj", "PDEL_adj")
@@ -433,39 +340,38 @@ CALL <- function(LINE, INDEL, num_sites, Ps){
   
   
   ALL_ALT_COUNT <- c('A','C','T','G', 'INS', 'DEL', 'INSo','DELo')
+  P_ADJ <- as.numeric(LINE[P_adj]) # Extract adjusted p-values from the LINE
+  p2 <- as.numeric(LINE[P2]) # Extract p-values from the LINE
   
-  #LINE <- VARIANTS[1,]
-  
-  P_ADJ <- as.numeric(LINE[P_adj])
-  p2 <- as.numeric(LINE[P2])
-  
+  # What indexes have an adjusted p-value < 0.05
+  # In next steps, we will use these indexes for several computations
   id <- which(P_ADJ <= 0.05)
   
-  # Taking always one, although does not need to be significant
+  # Taking always one, even though none of them is significant (length(id) == 0)
   if (length(id) == 0){
     id <- which(p2 == min(p2, na.rm = T))[[1]]
   }
   
-  #print (id)
-  
+  # If more than one position significant
   if (length(id) > 0){
     call <- NULL
     for (i in id){
-      ALT <- LAT[i]
+      ALT <- alt[i]
       
+      # Get genotypes
       if (ALT %in% c('DEL', 'INS')){
-        
         GENOTYPE <- INDEL[paste(LINE['CHROM'], as.numeric(LINE['POS']), sep = '-') == paste(INDEL$CHROM, INDEL$POS, sep = '-') & 
                             INDEL$Type == ALT,]$Genotype
       } else {
         GENOTYPE <- paste(REF, ALT, sep = '>')
       }
       
-      Ps <- as.numeric(LINE[P])
-      FORWARD <- as.numeric(LINE[FOR[i]])
-      REVERSE <- as.numeric(LINE[REV[i]])
-      ALT_COUNT <- as.numeric(FORWARD+REVERSE)
-      ALT_COUNT_all <- as.numeric(LINE[ALL_ALT_COUNT])
+      # Different values for constructing the info for VCF
+      Ps <- as.numeric(LINE[P]) # All probabilities
+      FORWARD <- as.numeric(LINE[FOR[i]]) # Forward-read counts
+      REVERSE <- as.numeric(LINE[REV[i]]) # Reverse-read counts
+      ALT_COUNT <- as.numeric(FORWARD+REVERSE) # Sum: Fwd+Rev
+      ALT_COUNT_all <- as.numeric(LINE[ALL_ALT_COUNT]) # All allele counts
       ALT_COUNT_padj <- formatC(as.numeric(P_ADJ[i]), format = "e", digits = 2)
       ALT_COUNT_p <- formatC(as.numeric(Ps[i]), format = "e", digits = 2)
       
@@ -473,24 +379,28 @@ CALL <- function(LINE, INDEL, num_sites, Ps){
       FISHER <- (fisher.test(matrix(c(FORWARD, REVERSE, REFf, REFr), nrow = 2))[[1]])
       FISHER_adj <- formatC(p.adjust(FISHER, n = num_sites, method = 'fdr'), format = "e", digits = 2)
       
+      # Label variant as significant or not, based on the corrected p-value (0.1)
       if (as.numeric(ALT_COUNT_padj) < 0.1){
         FILTER <- 'SIG'
       } else {
         FILTER <- 'NO_SIG'
       }
       
-      AB <- round(ALT_COUNT/(as.numeric(LINE['REFf']) + as.numeric(LINE['REFr'])), 6)
+      # Calculate Allele balance
+      AB <- round(ALT_COUNT/as.numeric(LINE['DP_HQ']), 6)
       
+      # Obtain the alternative counts and probabilities
+      # Other significant alternative alleles, such as scenarios found in biallelic sites, are not considered for this variable
       id_o <- ALL_id[!ALL_id %in% id]
       Ps_out <- Ps[ALL_id[!ALL_id %in% id]]
       OUT <- (prod(Ps_out, na.rm = T))
       OUT_adj <- formatC(p.adjust(c(OUT, Ps), method = 'fdr')[1], format = "e", digits = 2)
-      
       ALT_COUNT_o <- as.numeric(sum(ALT_COUNT_all[id_o]) - as.numeric(LINE['REFf']) - as.numeric(LINE['REFr']))
       
-      
+      # Collapse all information in a string variable
       call_temp <- paste(GENOTYPE, FILTER, ALT_COUNT, AB, ALT_COUNT_p, ALT_COUNT_padj, paste(FORWARD, REVERSE, REFf, REFr, sep = '-'), FISHER_adj, ALT_COUNT_o, OUT_adj, sep = ':')
       
+      # Append to all possible somatic calls
       call <- c(call, call_temp)
     }
     call <- paste(call, collapse = '|')
@@ -501,12 +411,8 @@ CALL <- function(LINE, INDEL, num_sites, Ps){
   return(call)
 }
 
-
-
-
-
-
-
+#####################################################
+#####################################################
 
 
 ###################
@@ -525,10 +431,10 @@ parser$add_argument("-o", "--out_file", type="character", help="output_file", me
 parser$add_argument("-params", "--parameters", type="character", help="Table with parameters", nargs=1, required=TRUE)
 parser$add_argument("-num", "--num_sites", default = NULL, type="character", help="Total number of sites analysed. Important for the p-value correction", nargs=1, required=FALSE)
 
-# reading parameters
+# Reading parameters
 args <- parser$parse_args()
 
-##assign names to files
+# Assign names to files
 TD1 <- args$tumor_file1
 TD2 <- args$tumor_file2
 TD3 <- args$tumor_file3
@@ -547,26 +453,26 @@ OUTF <- args$out_file
 # print (paste("Tumor file (DP4):", TD4, sep=" "))
 # print (paste("Out file:", OUTF))
 
-###################
+#------------------
 # Running
-###################
+#------------------
 
-## pass different tumor files to DP variables
+# Pass different tumor files to DP variables
 # as.data.frame:check if an object is a data frame, if not coerce it
-#fread for regular delimited files
+# Fread for regular delimited files
 DP1 <- as.data.frame(fread(TD1)) 
 DP2 <- as.data.frame(fread(TD2))
 DP3 <- as.data.frame(fread(TD3))
 DP4 <- as.data.frame(fread(TD4))
 PARAMS <- as.data.frame(fread(parameters))
 
+# Get total number of unique potential somatic coordinates to be analysed
 ALT_COLS <- c('A','C','T','G','DEL','INS')
 ALL_SITES <- rbind(DP1, DP2, DP3, DP4)
 ALL_SITES$MM <- rowSums(ALL_SITES[,ALT_COLS]) 
 ALL_SITES$MM <- ALL_SITES$MM - ALL_SITES$REFf - ALL_SITES$REFr 
 ALL_SITES <- ALL_SITES[ALL_SITES$MM > 0,]
 ALL_SITES <- unique(ALL_SITES[,c('CHROM', 'POS')])
-
 
 ## perform variant calling
 # DP1
@@ -585,9 +491,8 @@ rm(DP3)
 CALLING4 <- CALLING(DP4, PARAMS[PARAMS$BARCODE == 'DP4',], ALL_SITES)
 rm(DP4)
 
-
-
 # Merging results
+# Merge results obtained previously
 if (sum(c(nrow(CALLING1),nrow(CALLING2),nrow(CALLING3),nrow(CALLING4))) > 0){
   VARIANT0 <- aggregate(cbind(DP, DP_HQ, REFf, REFr, A, Af, Ar, Aq, Ao, C, Cf, Cr, Cq, Co, `T`, Tf, Tr, Tq, To,
                               G, Gf, Gr, Gq, Go, INS, INSf, INSr, INSo, DEL, DELf, DELr, DELo) ~ 
@@ -611,26 +516,31 @@ if (sum(c(nrow(CALLING1),nrow(CALLING2),nrow(CALLING3),nrow(CALLING4))) > 0){
 
 
 # Duplicate1
+# Rename colnames to merged them aftewards
 P_VAL1 <- CALLING1[,c('CHROM', 'POS', 'REF', 'PA','PC', 'PT', 'PG', 'PINS', 'PDEL', 'PINSo', 'PDELo')]
 colnames(P_VAL1) <- c('CHROM', 'POS', 'REF', 'PA1','PC1', 'PT1', 'PG1', 'PINS1', 'PDEL1', 'PINSo1', 'PDELo1')
 
 
 # Duplicate2
+# Rename colnames to merged them aftewards
 P_VAL2 <- CALLING2[,c('CHROM', 'POS', 'REF', 'PA','PC', 'PT', 'PG', 'PINS', 'PDEL', 'PINSo', 'PDELo')]
 colnames(P_VAL2) <- c('CHROM', 'POS', 'REF', 'PA2','PC2', 'PT2', 'PG2', 'PINS2', 'PDEL2', 'PINSo2', 'PDELo2')
 
 
 # Duplicate3
+# Rename colnames to merged them aftewards
 P_VAL3 <- CALLING3[,c('CHROM', 'POS', 'REF', 'PA','PC', 'PT', 'PG', 'PINS', 'PDEL', 'PINSo', 'PDELo')]
 colnames(P_VAL3) <- c('CHROM', 'POS', 'REF', 'PA3','PC3', 'PT3', 'PG3', 'PINS3', 'PDEL3', 'PINSo3', 'PDELo3')
 
 
 # Duplicate4
+# Rename colnames to merged them aftewards
 P_VAL4 <- CALLING4[,c('CHROM', 'POS', 'REF', 'PA','PC', 'PT', 'PG', 'PINS', 'PDEL', 'PINSo', 'PDELo')]
 colnames(P_VAL4) <- c('CHROM', 'POS', 'REF', 'PA4','PC4', 'PT4', 'PG4', 'PINS4', 'PDEL4', 'PINSo4', 'PDELo4')
 
 
 # Merging results
+# Append columns 
 VARIANT1 <- merge(VARIANT0, P_VAL1, by = c('CHROM', 'POS', 'REF'), all.x = T)
 VARIANT2 <- merge(VARIANT1, P_VAL2, by = c('CHROM', 'POS', 'REF'), all.x = T)
 VARIANT3 <- merge(VARIANT2, P_VAL3, by = c('CHROM', 'POS', 'REF'), all.x = T)
@@ -640,9 +550,10 @@ rm(VARIANT1)
 rm(VARIANT2)
 rm(VARIANT3)
 
-# Merging p-values
+# Change NA by "1"
 VARIANT4[is.na(VARIANT4)] <- 1
 
+# Merging p-values by fisher test
 if (nrow(VARIANT4) > 0){
   VARIANT4$PA <- apply(VARIANT4, 1, function(x) ifelse(x['REF'] == 'A', NA, 
                                                        combine.test(c(as.numeric(x['PA1']),as.numeric(x['PA2']), as.numeric(x['PA3']), as.numeric(x['PA4'])), 
@@ -675,9 +586,7 @@ if (nrow(VARIANT4) > 0){
 VARIANTS <- VARIANT4
 rm(VARIANT4)
 
-
-
-# P correction
+# P-value correction (FDR method)
 if (nrow(VARIANTS) > 0){
   if (is.null(num_sites) || num_sites <= 0){
     counts <- nrow(ALL_SITES)
@@ -713,11 +622,14 @@ if (nrow(VARIANTS) > 0){
 }
 
 
-# Decide genotypes
-## Indel genotype
+## Decide genotypes
+#-----------------
+## Indel analysis
+#-----------------
 ALL <- rbind(CALLING1, CALLING2, CALLING3, CALLING4)
 ALL$COUNT <- 1
 
+# Deletion
 ALL_del <- ALL[ALL$DEL > 0,]
 if (nrow(ALL_del) > 0){
   Del <- aggregate(cbind(DEL, COUNT) ~ CHROM + POS + REF + DELg, ALL_del, sum)
@@ -744,6 +656,7 @@ if (nrow(ALL_del) > 0){
   Del <- numeric(0)
 }
 
+# Insertion
 ALL_ins <- ALL[ALL$INS > 0,]
 if (nrow(ALL_ins) > 0){
   Ins <- aggregate(cbind(INS, COUNT) ~ CHROM + POS + REF + INSg, ALL_ins, sum)
@@ -781,7 +694,7 @@ rm(CALLING4)
 VARIANTS$DP_HQ <- rowSums(VARIANTS[,c('A','C','T','G', 'INS', 'DEL', 'INSo','DELo')])
 VARIANTS$MM <- VARIANTS$DP_HQ - VARIANTS$REFf - VARIANTS$REFr
 
-# Take p values for correction, remove NAs and random select num_sites
+# Take p-values for correction, remove NAs and random select num_sites
 if (nrow(VARIANTS) > 0){
   Ps <- c(VARIANTS$PA, VARIANTS$PG, VARIANTS$PC, VARIANTS$PT)
   Ps <- sample(Ps, size = max(num_sites, nrow(VARIANTS)))
@@ -793,19 +706,16 @@ if (nrow(VARIANTS) > 0){
 
 # Final calls
 FINAL <- VARIANTS[,c('CHROM','POS','REF','DP','DP_HQ', 'REFf', 'REFr','MM','CALL')]
-
 FINAL$POS <- as.numeric(as.character(FINAL$POS))
 
 # Likely somatic
 if (nrow(FINAL) > 0){
   SOMATIC_LIKE <- FINAL[!grepl('NO_SIG', FINAL$CALL) & grepl('SIG', FINAL$CALL),]
-
   # Distance between variants
   FINAL <- dist_SNP(CALLS = FINAL, SOMATIC_LIKE = SOMATIC_LIKE)
 } else {
   FINAL$DIST <- numeric(0)
 }
-
 
 # Ordering tsv file
 FINAL <- FINAL[with(FINAL, order(CHROM, POS)),]

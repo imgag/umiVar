@@ -24,7 +24,6 @@ argument_parser.add_argument('-tbam', '--tbam', required=True, help='Tumor bam f
 argument_parser.add_argument('-nbam', '--nbam', default='', required=False, help='Normal bam file')
 argument_parser.add_argument('-b', '--bed', default='', help='Bed file of the targeted regions. O-based')
 argument_parser.add_argument('-r', '--ref', required=True, help='Reference genome - fasta')
-argument_parser.add_argument('-hom', '--homopolymer', type=str, help='File with homopolymer positions in reference genome', required=True)
 argument_parser.add_argument('-o', '--out_file', default='./Sample.vcf', help='Out vcf file')
 argument_parser.add_argument('-p', '--param', default='', help='Beta-binomial parameters table')
 argument_parser.add_argument('-mq', '--mq', default=30, help='Minimum mapping quality')
@@ -240,7 +239,6 @@ variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + 
                          ' -i ' + temp_directory + '/stats.tsv' + \
                          ' -tID ' + tumor_id + \
                          ' -ref ' + arguments.ref + \
-                         ' -hom ' + arguments.homopolymer + \
                          ' -o ' + arguments.out_file + \
                          ' -cov 10' + \
                          ' -ac ' + str(arguments.ac) + \
