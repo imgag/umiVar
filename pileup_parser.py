@@ -385,10 +385,8 @@ def main():
     # Header of the output tsv file
     header = (
         "CHROM", "POS", "REF", "DP", "DP_HQ", "REFf", "REFr", "Ag", "A", "Af", "Ar", "Aq", "Ao", "Cg", "C", "Cf", "Cr",
-        "Cq",
-        "Co", "Tg", "T", "Tf", "Tr", "Tq", "To", "Gg", "G", "Gf", "Gr", "Gq", "Go", "INSg", "INS", "INSf", "INSr",
-        "INSq",
-        "INSo", "DELg", "DEL", "DELf", "DELr", "DELq", "DELo", "Lq_alt_count", "N_count")
+        "Cq", "Co", "Tg", "T", "Tf", "Tr", "Tq", "To", "Gg", "G", "Gf", "Gr", "Gq", "Go", "INSg", "INS", "INSf", "INSr",
+        "INSq", "INSo", "DELg", "DEL", "DELf", "DELr", "DELq", "DELo", "Lq_alt_count", "N_count")
     header = ("\t".join(header)) + "\n"
     output_tsv_file.write(header)
 
