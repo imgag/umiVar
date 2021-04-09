@@ -234,10 +234,13 @@ def parse_pileup_statistics():
                         alt_base.append(alt_index)
                         alt_count_all.append(alt_count)
 
-                        if int(alt_count) > 0:
-                            genotype = alt_index
+                        # Determine genotype:
+                        if float(ab_score) > 0.8:
+                            genotype = "1/1"
+                        elif float(ab_score) > 0.3:
+                            genotype = "0/1"
                         else:
-                            genotype = reference_seq
+                            genotype = "./."
 
                         filter_field.append(filter_string[count])
 
@@ -256,10 +259,13 @@ def parse_pileup_statistics():
                         alt_base.append(alt_index)
                         alt_count_all.append(alt_count)
 
-                        if int(alt_count) > 0:
-                            genotype = alt_index
+                        # Determine genotype:
+                        if float(ab_score) > 0.8:
+                            genotype = "1/1"
+                        elif float(ab_score) > 0.3:
+                            genotype = "0/1"
                         else:
-                            genotype = reference_seq
+                            genotype = "./."
 
                         filter_field.append(filter_string[count])
 
@@ -322,7 +328,7 @@ def parse_pileup_statistics():
                 alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[0]
 
                 # Info column
-                fields = ['Variant_dist=' + str(dist), 'Upstream=' + str(sequence_context), 'PValue=' + str(alt_count_p)]
+                fields = ['Variant_dist=' + str(dist), 'Vicinity=' + str(sequence_context), 'PValue=' + str(alt_count_p)]
 
                 # Format column
                 format_field = ["GT", "Alt_Count", "DP", "AF", "Perror", "Strand", "FS", "VCB", "Pvcb", ]
@@ -330,11 +336,13 @@ def parse_pileup_statistics():
                 # Append p-val for MRD calculation
                 MRD.append(float(alt_count_p))
 
-                # Get genotype
-                if int(alt_count) > 0:
-                    genotype = alt_base
+                # Determine genotype:
+                if float(ab_score) > 0.8:
+                    genotype = "1/1"
+                elif float(ab_score) > 0.3:
+                    genotype = "0/1"
                 else:
-                    genotype = reference_seq
+                    genotype = "./."
 
                 sample = [genotype, str(alt_count), str(dp_hq), str(ab_score), str(alt_count_pad_j), base_strand,
                           str(fisher),
@@ -405,11 +413,11 @@ def print_vcf_header():
 ##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
 ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts"
+##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=AF,Number=1,Type=Float,Description="Alternative allele fraction">
 ##FORMAT=<ID=Perror,Number=1,Type=Float,Description="Q-value to belong to the error rate distribution (beta binomial distribution) - After FDR correction">
-##FORMAT=<ID=Strand,Number=2,Type=String,Description="Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse">
+##FORMAT=<ID=Strand,Number=1,Type=String,Description="Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse">
 ##FORMAT=<ID=FS,Number=1,Type=Float,Description="Fisher strand test (q-value)">
 ##FORMAT=<ID=VCB,Number=1,Type=Integer,Description="Variant Count bias, number of other different alternative alleles found">
 ##FORMAT=<ID=Pvcb,Number=1,Type=Float,Description="Q-value for other alternative alleles to belong to the error rate distribution (beta binomial distribution) - After FDR correction">"""
