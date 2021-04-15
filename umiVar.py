@@ -39,13 +39,13 @@ argument_parser.add_argument('-t', '--temp_dir', default='.', help='Temporary di
 arguments = argument_parser.parse_args()
 
 # Use tumor BAM filename as ID
-tumor_id = arguments.tbam.replace('.bam', '')
+tumor_id = os.path.basename(os.path.splitext(arguments.tbam)[0])
 
 # Get directory of running script
 script_directory = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Get output directory based on out_file (default is ./)
-out_directory = os.path.dirname(arguments.out_file)
+out_directory = os.path.realpath(os.path.dirname(arguments.out_file))
 
 # If the output directory does not exist, create it with all subdirectories
 if not os.path.exists(out_directory):

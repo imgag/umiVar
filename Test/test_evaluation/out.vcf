@@ -1,6 +1,6 @@
 ##fileformat=VCFv4.1
 ##fileDate=27/07/2020
-##umiVar
+##source=umiVar2
 ##reference=/mnt/share/data/genomes/GRCh37.fa
 ##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
 ##INFO=<ID=Upstream,Number=.,Type=String,Description="Upstream sequence (5 nucleotides)">

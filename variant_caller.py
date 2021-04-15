@@ -395,7 +395,7 @@ def print_vcf_header():
     date = time.strftime("%d/%m/%Y")  # dd/mm/yyyy format
     vcf_format = "##fileformat=VCFv4.1"
     date_line = "##fileDate=%s" % date
-    source = "##umiVar"
+    source = "##source=umiVar2"
     reference = "##reference=%s" % reference_file
     concepts = """##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
 ##INFO=<ID=Upstream,Number=.,Type=String,Description="Upstream sequence (5 nucleotides)">
