@@ -18,12 +18,23 @@ correction efficiency, and the PCR copy number distribution.
 Simply clone the repository
 
 ## Dependencies
-samtools
-pysam
-numpy
-scipy
-networkx
+Required python packages:
+  - samtools
+  - pysam
+  - numpy
+  - scipy
+  - networkx
 
+Required R packages:
+	- VGAM
+	- argparse
+	- data.table
+	- ggplot2
+	- grid
+	- gridExtra
+	- scales
+	- seqinr
+	- survcomp
 
 ## Homopolymer detection
 
