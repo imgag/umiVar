@@ -11,10 +11,8 @@ import time
 import pysam
 import subprocess
 
-
 # Take time for speed check
 start_time = time.time()
-
 
 # Create argument parser
 argument_parser = argparse.ArgumentParser("umiVar - variant calling with unique molecular barcodes")
@@ -34,6 +32,8 @@ argument_parser.add_argument('-ns', '--num_sites', default=-1, help='Number of s
 argument_parser.add_argument('-str', '--strand', default=0, choices=['0', '1'],
                              help='Strand filter activation. 0 for deactivating the filter. Default [0]')
 argument_parser.add_argument('-t', '--temp_dir', default='.', help='Temporary directory')
+argument_parser.add_argument('-crb', '--custom_rscript_binary', default='Rscript',
+                             help='Path to custom Rscript binary. [Default: \'Rscript\']')
 
 # Retrieve arguments
 arguments = argument_parser.parse_args()
@@ -46,6 +46,12 @@ script_directory = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Get output directory based on out_file (default is ./)
 out_directory = os.path.realpath(os.path.dirname(arguments.out_file))
+
+# Check if custom Rscript path is set and exists
+rscript_path = arguments.custom_rscript_binary
+if rscript_path != 'Rscript':
+    if not os.path.isfile(rscript_path):
+        raise FileNotFoundError("Given Rscript binary path '" + rscript_path + "' does not exist!")
 
 # If the output directory does not exist, create it with all subdirectories
 if not os.path.exists(out_directory):
@@ -108,13 +114,11 @@ out_prefix = temp_directory + '/dedup'
 frequency = temp_directory + '/dp_freq.tsv'
 split_bam(infile=arguments.tbam, outprefix=out_prefix, dp_count_outfile=frequency)
 
-
 # Debug speed
 end_time = time.time()
 time_taken = end_time - start_time
 start_time = end_time
 print('\nElapsed time for splitting BAM file: ' + str(time_taken) + "\n\n")
-
 
 # Go over all of the split BAM files
 for file in sorted(glob.glob(temp_directory + '/dedup*.bam')):
@@ -179,7 +183,6 @@ for file in sorted(glob.glob(temp_directory + '/dedup*.bam')):
     start_time = end_time
     print('Elapsed time pileup_parser.py on ' + f_pileup + " : " + str(time_taken) + "\n\n")
 
-
 # Compute parameters of the negative binomial error distribution for each type of nucleotide-changes
 f_params = None
 
@@ -187,7 +190,7 @@ f_params = None
 if arguments.param == '':
     f_params = temp_directory + '/parameters.txt'
 
-    beta_binomial_parameters_command = 'Rscript ' + script_directory + '/R_scripts/beta_binomial_parameters.R' + \
+    beta_binomial_parameters_command = rscript_path + ' ' + script_directory + '/R_scripts/beta_binomial_parameters.R' + \
                                        ' -t1 ' + temp_directory + '/dedup_DP1.tsv' + \
                                        ' -t2 ' + temp_directory + '/dedup_DP2.tsv' + \
                                        ' -t3 ' + temp_directory + '/dedup_DP3.tsv' + \
@@ -203,16 +206,14 @@ if arguments.param == '':
 else:
     f_params = arguments.param
 
-
 # Debug speed
 end_time = time.time()
 time_taken = end_time - start_time
 start_time = end_time
 print('\n\nElapsed time calculating beta parameters: ' + str(time_taken))
 
-
 # Compute quality statistics for each genome position for variant calling
-statistical_functions_command = 'Rscript ' + script_directory + '/R_scripts/statistical_functions.R' + \
+statistical_functions_command = rscript_path + ' ' + script_directory + '/R_scripts/statistical_functions.R' + \
                                 ' -t1 ' + temp_directory + '/dedup_DP1.tsv' + \
                                 ' -t2 ' + temp_directory + '/dedup_DP2.tsv' + \
                                 ' -t3 ' + temp_directory + '/dedup_DP3.tsv' + \
@@ -226,13 +227,11 @@ try:
 except subprocess.CalledProcessError as error:
     print(error)
 
-
 # Debug speed
 end_time = time.time()
 time_taken = end_time - start_time
 start_time = end_time
 print('\n\nElapsed time for R statistics: ' + str(time_taken))
-
 
 # Generate a VCF file
 variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
@@ -251,16 +250,14 @@ try:
 except subprocess.CalledProcessError as error:
     print(error)
 
-
 # Debug speed
 end_time = time.time()
 time_taken = end_time - start_time
 start_time = end_time
 print('\n\nElapsed time for variant_caller.py: ' + str(time_taken) + "\n\n")
 
-
 # Plot error rates with R
-plot_error_rate_command = 'Rscript ' + script_directory + '/R_scripts/plot_error_rates.R' + \
+plot_error_rate_command = rscript_path + ' ' + script_directory + '/R_scripts/plot_error_rates.R' + \
                           ' -bc1 ' + temp_directory + '/dedup_DP1.tsv' + \
                           ' -bc2 ' + temp_directory + '/dedup_DP2.tsv' + \
                           ' -bc3 ' + temp_directory + '/dedup_DP3.tsv' + \
@@ -271,7 +268,6 @@ try:
     subprocess.run(plot_error_rate_command, shell=True)
 except subprocess.CalledProcessError as error:
     print(error)
-
 
 # Debug speed
 end_time = time.time()

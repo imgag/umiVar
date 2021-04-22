@@ -26,15 +26,15 @@ Required python packages:
   - networkx
 
 Required R packages:
-	- VGAM
-	- argparse
-	- data.table
-	- ggplot2
-	- grid
-	- gridExtra
-	- scales
-	- seqinr
-	- survcomp
+  - VGAM
+  - argparse
+  - data.table
+  - ggplot2
+  - grid
+  - gridExtra
+  - scales
+  - seqinr
+  - survcomp
 
 ## Homopolymer detection
 
