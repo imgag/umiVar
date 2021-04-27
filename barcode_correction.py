@@ -38,14 +38,24 @@ def extract_barcode(read_entry, barcode_type):
     bc1 = barcode_entry.split(',')[0]
     bc2 = barcode_entry.split(',')[1]
     barcode_sequence = ""
+    
+    try:
+        barcode_entry = qname.split(':')[-1]
+        bc1 = barcode_entry.split(',')[0]
+        bc2 = barcode_entry.split(',')[1]
 
-    # Grouping by barcodes
-    if barcode_type == "BEGINNING":
-        barcode_sequence = bc1
-    elif barcode_type == "END":
-        barcode_sequence = bc2
-    elif barcode_type == "BOTH":
-        barcode_sequence = bc1 + bc2
+        # Grouping by barcodes
+        if barcode_type == "BEGINNING":
+            barcode_sequence = bc1
+        elif barcode_type == "END":
+            barcode_sequence = bc2
+        elif barcode_type == "BOTH":
+            barcode_sequence = bc1 + bc2
+
+    except Exception as e:
+        print("Cannot find barcode in read: " + qname)
+        print("Does the file contain barcodes in headers?")
+        exit(1)
 
     return barcode_sequence
 
