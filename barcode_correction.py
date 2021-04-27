@@ -34,9 +34,6 @@ def get_edge(code, in_list, errors):
 # Returns the barcode of a read
 def extract_barcode(read_entry, barcode_type):
     qname = str(read_entry.qname)
-    barcode_entry = qname.split(':')[-1]
-    bc1 = barcode_entry.split(',')[0]
-    bc2 = barcode_entry.split(',')[1]
     barcode_sequence = ""
     
     try:
