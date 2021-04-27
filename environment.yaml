@@ -21,3 +21,4 @@ dependencies:
   - r-vgam
   - r-scales
   - r-crayon
+  - r-pkgconfig

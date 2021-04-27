@@ -10,6 +10,7 @@ import tempfile
 import time
 import pysam
 import subprocess
+import shutil
 
 # Take time for speed check
 start_time = time.time()
@@ -23,6 +24,7 @@ argument_parser.add_argument('-nbam', '--nbam', default='', required=False, help
 argument_parser.add_argument('-b', '--bed', default='', help='Bed file of the targeted regions. O-based')
 argument_parser.add_argument('-r', '--ref', required=True, help='Reference genome - fasta')
 argument_parser.add_argument('-o', '--out_file', default='./Sample.vcf', help='Out vcf file')
+argument_parser.add_argument('-op', '--out_vcf_only', action='store_true', help='Generate only VCF file output' )
 argument_parser.add_argument('-p', '--param', default='', help='Beta-binomial parameters table')
 argument_parser.add_argument('-mq', '--mq', default=30, help='Minimum mapping quality')
 argument_parser.add_argument('-bq', '--bq', default=20, help='Minimum base quality')
@@ -32,6 +34,7 @@ argument_parser.add_argument('-ns', '--num_sites', default=-1, help='Number of s
 argument_parser.add_argument('-str', '--strand', default=0, choices=['0', '1'],
                              help='Strand filter activation. 0 for deactivating the filter. Default [0]')
 argument_parser.add_argument('-t', '--temp_dir', default='.', help='Temporary directory')
+argument_parser.add_argument('-kt', '--keep_temp', action='store_true', help='Dont delete temporary directory')
 argument_parser.add_argument('-crb', '--custom_rscript_binary', default='Rscript',
                              help='Path to custom Rscript binary. [Default: \'Rscript\']')
 
@@ -60,7 +63,6 @@ if not os.path.exists(out_directory):
 # Create a temporary working directory
 temp_directory_path = arguments.temp_dir
 temp_directory = tempfile.mkdtemp(dir=arguments.temp_dir, prefix='umiVar_tmp.')
-
 
 # Split the BAM file into files with 1 or 2 or 3 or 4 and more barcode duplicates
 def split_bam(infile, outprefix, dp_count_outfile):
@@ -188,7 +190,7 @@ f_params = None
 
 # If no parameter files is given, estimate the optimal parameters of the beta-binomial distribution
 if arguments.param == '':
-    f_params = temp_directory + '/parameters.txt'
+    f_params = temp_directory + '/beta_binom_parameters.txt'
 
     beta_binomial_parameters_command = rscript_path + ' ' + script_directory + '/R_scripts/beta_binomial_parameters.R' + \
                                        ' -t1 ' + temp_directory + '/dedup_DP1.tsv' + \
@@ -274,3 +276,22 @@ end_time = time.time()
 time_taken = end_time - start_time
 start_time = end_time
 print('\n\nElapsed time for R plot error rates: ' + str(time_taken) + "\n\n")
+
+## Copy results to output folder
+if not arguments.out_vcf_only:
+    # Error Rates 
+    os.rename(temp_directory + "/coverage.pdf", out_directory + "/coverage.pdf")
+    os.rename(temp_directory + "/error_rates_per_nucleotide.pdf", out_directory + "/error_rates_per_nucleotide.pdf")
+    os.rename(temp_directory + "/error_rates.pdf", out_directory + "/error_rates.pdf")
+    os.rename(temp_directory + "/error_rates.txt", out_directory + "/error_rates.txt")
+    os.rename(temp_directory + "/error_rates_per_nucleotide.txt", out_directory + "/error_rates_per_nucleotide.txt")
+    os.rename(temp_directory + "/alternative_count.pdf", out_directory + "/alternative_count.pdf")
+    os.rename(temp_directory + "/alternative_count_zoom.pdf", out_directory + "/alternative_count_zoom.pdf")
+    # Beta Binomial Params
+    os.rename(temp_directory + "/beta_binom_parameters.txt", out_directory + "/beta_binom_parameters.txt")
+    os.rename(temp_directory + "/dp_freq.tsv", out_directory + "/dp_freq.tsv")
+    os.rename(temp_directory + "/stats.tsv", out_directory + "/stats.tsv")
+
+# Delete temp folder
+if arguments.keep_temp:
+    shutil.rmtree(temp_directory)

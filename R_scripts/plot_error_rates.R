@@ -18,19 +18,11 @@ parser$add_argument("-out", "--out_folder", type="character", help="out_folder",
 
 # reading parameters
 args <- parser$parse_args()
-
 bc1 <- args$bc1_file
-
 bc2 <- args$bc2_file
-
 bc3 <- args$bc3_file
-
 bc4 <- args$bc4_file
-
-
 OUTF <- args$out_folder
-
-
 
 #### SOME FUNCTIONS
 ER_NT <- function(x){
@@ -57,9 +49,7 @@ NT_CHANGE <- function(x){
 
 LOADING <- function(DATA){
   NUCLEOTIDES <- c('A','C','T','G', 'INS', 'INSo', 'DEL', 'DELo')
-  
   DATA <- as.data.frame(fread(DATA))
-
   DATA$ALT_COUNT <- rowSums(DATA[,NUCLEOTIDES])-DATA$REFf-DATA$REFr
   DATA$DP <- rowSums(DATA[,NUCLEOTIDES])
   DATA$AB <- DATA$ALT_COUNT/DATA$DP_HQ
@@ -225,12 +215,11 @@ PLOT_ER_NT <- ggplot(ER_NT_GROUP_PASS,aes(x=Correction_level,y=ER, color = Chang
 
 ### PLOTING INFORMATION ERROR RATES
 setwd(OUTF)
-ggsave(file="Coverage.pdf",plot=COV_PLOT, useDingbats=FALSE)
-ggsave(file="Error_rates_per_nucleotide.pdf",plot=PLOT_ER_NT, useDingbats=FALSE)
-ggsave(file='Error_rates.pdf',plot=PLOT_ER, useDingbats=FALSE)
-write.table(ER,"Error_rates.txt",row.names = F,col.names = T,sep='\t', quote = F)
-write.table(ER_NT_GROUP,"Error_rates_per_nucleotide.txt",row.names = F,col.names = T,sep='\t', quote = F)
-
+ggsave(file="coverage.pdf",plot=COV_PLOT, useDingbats=FALSE)
+ggsave(file="error_rates_per_nucleotide.pdf",plot=PLOT_ER_NT, useDingbats=FALSE)
+ggsave(file='error_rates.pdf',plot=PLOT_ER, useDingbats=FALSE)
+write.table(ER,"error_rates.txt",row.names = F,col.names = T,sep='\t', quote = F)
+write.table(ER_NT_GROUP,"error_rates_per_nucleotide.txt",row.names = F,col.names = T,sep='\t', quote = F)
 
 # ### COUNT DISTRIBUTION PLOTS
 ### COUNT DISTRIBUTION PLOTS
@@ -270,50 +259,5 @@ ALT_COUNT_PLOT_ZOOM <- ggplot(DATA, aes(x=as.numeric(ALT_COUNT_1000),  group=Cor
   #scale_x_discrete(limits=seq(0, 8))
 
 ## SAVING LAST PLOTS
-ggsave(file='Alternative_Count.pdf',plot=ALT_COUNT_PLOT,useDingbats=FALSE)
-ggsave(file='Alternative_Count_zoom.pdf',plot=ALT_COUNT_PLOT_ZOOM,useDingbats=FALSE)
-
-
-
-# # ### COUNT DISTRIBUTION PLOTS
-# ### COUNT DISTRIBUTION PLOTS
-# BC1$Correction_type <- "1x"
-# BC1$ALT_COUNT_1000 <- (BC1$ALT_COUNT/BC1$DP)
-# 
-# BC2$Correction_type <- "2x"
-# BC2$ALT_COUNT_1000 <- (BC2$ALT_COUNT/BC2$DP)
-# 
-# BC3$Correction_type <- "3x"
-# BC3$ALT_COUNT_1000 <- (BC3$ALT_COUNT/BC3$DP)
-# 
-# BC4$ALT_COUNT_1000 <- (BC4$ALT_COUNT/BC4$DP)
-# BC4$Correction_type <- "4x"
-# 
-# 
-# DATA <- rbind(BC1,BC2,BC3,BC4)
-# 
-# ALT_COUNT_PLOT <- ggplot(DATA, aes(x=as.numeric(ALT_COUNT_1000),  group=Correction_type)) +
-#   geom_histogram(binwidth = 0.005, size = 0.25,
-#                  aes(y = ..density..), color="black", fill="lightblue") +
-#   facet_grid(~Correction_type) +
-#   scale_y_continuous(labels = percent_format()) +
-#   theme_bw()+
-#   coord_cartesian(xlim=c(-0.001, 0.05)) +
-#   scale_x_discrete(limits=seq(0, 8)) +
-#   labs(title = "Alt counts per num. of duplicates. Coverage: 1000", x = "Alt count", y = "Fraction", fill = "Alt count")
-# 
-# 
-# 
-# ALT_COUNT_PLOT_ZOOM <- ggplot(DATA, aes(x=as.numeric(ALT_COUNT_1000),  group=Correction_type)) +
-#   geom_histogram(binwidth = 1, size = 0.25,
-#                  aes(y = ..density..), color="black", fill="lightblue") +
-#   facet_grid(~Correction_type) +
-#   scale_y_continuous(labels = percent_format()) +
-#   theme_bw()+
-#   coord_cartesian(xlim=c(-1, 8), ylim=c(0,0.15)) +
-#   scale_x_discrete(limits=seq(0, 8))
-#   
-# ## SAVING LAST PLOTS
-# ggsave(file='Alternative_Count.pdf',plot=ALT_COUNT_PLOT,useDingbats=FALSE)
-# ggsave(file='Alternative_Count_zoom.pdf',plot=ALT_COUNT_PLOT_ZOOM,useDingbats=FALSE)
-# 
+ggsave(file='alternative_count.pdf',plot=ALT_COUNT_PLOT,useDingbats=FALSE)
+ggsave(file='alternative_count_zoom.pdf',plot=ALT_COUNT_PLOT_ZOOM,useDingbats=FALSE)
