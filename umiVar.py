@@ -279,18 +279,26 @@ print('\n\nElapsed time for R plot error rates: ' + str(time_taken) + "\n\n")
 
 ## Copy results to output folder
 if not arguments.out_vcf_only:
-    # Error Rates 
-    os.rename(temp_directory + "/coverage.pdf", out_directory + "/coverage.pdf")
-    os.rename(temp_directory + "/error_rates_per_nucleotide.pdf", out_directory + "/error_rates_per_nucleotide.pdf")
-    os.rename(temp_directory + "/error_rates.pdf", out_directory + "/error_rates.pdf")
-    os.rename(temp_directory + "/error_rates.txt", out_directory + "/error_rates.txt")
-    os.rename(temp_directory + "/error_rates_per_nucleotide.txt", out_directory + "/error_rates_per_nucleotide.txt")
-    os.rename(temp_directory + "/alternative_count.pdf", out_directory + "/alternative_count.pdf")
-    os.rename(temp_directory + "/alternative_count_zoom.pdf", out_directory + "/alternative_count_zoom.pdf")
-    # Beta Binomial Params
-    os.rename(temp_directory + "/beta_binom_parameters.txt", out_directory + "/beta_binom_parameters.txt")
-    os.rename(temp_directory + "/dp_freq.tsv", out_directory + "/dp_freq.tsv")
-    os.rename(temp_directory + "/stats.tsv", out_directory + "/stats.tsv")
+
+    out_files = [
+        'coverage.pdf',
+        'error_rates_per_nucleotide.pdf',
+        'error_rates.pdf',
+        'error_rates.txt',
+        'error_rates_per_nucleotide.txt',
+        'alternative_count.pdf',
+        'alternative_count_zoom.pdf',
+        'beta_binom_parameters.txt',
+        'dp_freq.tsv',
+        'stats.tsv'
+        ]
+
+    for f in out_files:
+        try:
+            os.rename(os.path.join(temp_directory, f), os.path.join(out_directory, f))
+        except (FileNotFoundError):
+            print("Could not copy file " + f + ", does not exist.")
+            pass
 
 # Delete temp folder
 if arguments.keep_temp:
