@@ -170,7 +170,7 @@ def parse_pileup_statistics():
             pos = fields[pos_index]
             snv_id = '.'
             ref_fwd = int(fields[ref_fwd_index])
-            ref_rev = int(fields[ref_rev_index])
+            ref_rev = int(fields[ref_rev_index])u
             ref_total = ref_fwd + ref_rev
             mm = int(fields[mm_index])
             dp = int(fields[dp_index])
@@ -182,9 +182,12 @@ def parse_pileup_statistics():
             variant_candidates = fields[call_index].split("|")
 
             # Get sequence context (vicinity) of a variant for homopolymer check (5 bases up- and down-stream)
+            # Get fewer bases when variant is at the start or end of the sequence
             num_bases = 5
+            pos_start = max(int(pos) - num(bases +1), 1)
+            pos_end = min(int(pos) + num_bases, in_fasta.get_reference_length(chrom) - (num_bases + 1))
             try:
-                sequence_context = in_fasta.fetch(chrom, int(pos) - (num_bases + 1), int(pos) + num_bases)
+                sequence_context = in_fasta.fetch(chrom, seq_fetch_start, seq_fetch_end + num_bases)
                 sequence_context = sequence_context.upper()
             except FileNotFoundError:
                 sequence_context = '.'
