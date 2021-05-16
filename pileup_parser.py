@@ -312,7 +312,7 @@ def pileup_info(line, min_bq):
         ins_count = insertion[ins_call]
         ins_count_fwd = insertion_fwd[ins_call]
         ins_count_rev = insertion_rev[ins_call]
-        ref_base = ref_base.upper()
+        ref_base2 = ref_base.upper()
         ins_call = ref_base.upper() + ins_call.upper()
         diff = indel_counts['ins'] - ins_count
     else:
@@ -320,10 +320,10 @@ def pileup_info(line, min_bq):
         ins_count_fwd = 0
         ins_count_rev = 0
         diff = 0
-        ref_base = ref_base.upper()
+        ref_base2 = ref_base.upper()
         ins_call = 'ins'
 
-    change = ref_base + '>' + ins_call
+    change = ref_base2 + '>' + ins_call
     insertion = [change, str(ins_count), str(ins_count_fwd), str(ins_count_rev), '.', str(diff)]
     insertion = '\t'.join(insertion)
 
@@ -334,17 +334,17 @@ def pileup_info(line, min_bq):
         del_count_fwd = deletion_fwd[del_call]
         del_count_rev = deletion_rev[del_call]
         diff = indel_counts['del'] - del_count
-        ref_base = ref_base.upper() + del_call.upper()
+        ref_base2 = ref_base.upper() + del_call.upper()
         del_call = ref_base.upper()
     else:
         del_count = 0
         del_count_fwd = 0
         del_count_rev = 0
         diff = 0
-        ref_base = ref_base.upper()
+        ref_base2 = ref_base.upper()
         del_call = 'del'
 
-    change = ref_base + '>' + del_call
+    change = ref_base2 + '>' + del_call
     deletion = [change, str(del_count), str(del_count_fwd), str(del_count_rev), '.', str(diff)]
     deletion = '\t'.join(deletion)
 
