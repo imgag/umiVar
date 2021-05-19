@@ -55,8 +55,7 @@ def homopolymer_filter(sequence):
 # Filter variants using various filter types
 def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     # Declare variables
-    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(
-        ":")
+    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
 
     # Reference and alternative base for this variant
     ref_base, alt_base = gt.split(">")
@@ -71,9 +70,13 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     if float(alt_count) > 0 and mm > 0:
         filter_criteria = []
 
-        # Filter: sequencing error FDR
+        # Filter: p-value not significant
+        if float(alt_count_p) > 0.1:
+            filter_criteria.append("pvalue")
+
+        # Filter: FDR not significant
         if float(alt_count_fdr) > 0.1:
-            filter_criteria.append("Error")
+            filter_criteria.append("FDR")
 
         # Filter: homopolymer up-stream
         if homopolymer == 1:
@@ -83,11 +86,8 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
         if float(af) < min_AF:
             filter_criteria.append("Low_AF")
 
-        # Filter: minimum alternative alleles per strand
-        if (min(int(alt_fwd), int(alt_rev)) == 0 and
-                min(int(ref_fwd), int(ref_rev)) != 0 and
-                strand_counts == 1 and int(alt_count) > 3):
-            filter_criteria.append("Strand_imbalanced")
+        if int(alt_fwd) == 0 or int(alt_rev) == 0:
+            filter_criteria.append("Strand_Imbalanced")
 
         # Filter: minimum depth
         if int(depth_hq) < min_COV:
@@ -103,11 +103,11 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
 
         # Filter: High fraction of low quality bases
         if float(depth_hq) / float(depth) < 0.75:
-            filter_criteria.append("Low_qual_pos")
+            filter_criteria.append("Low_Qual_Pos")
 
         # Filter: contamination = high number of third or fourth allele
         if float(alt_count_other) / (float(mm)) > 0.3 or float(out_adj) < 0.1:
-            filter_criteria.append("Variant_contamination")
+            filter_criteria.append("Variant_Contamination")
 
         # Filter: Fisher strand bias
         if float(strand_bias) < 0.01 and strand_counts == 1:
@@ -448,21 +448,17 @@ def print_tsv_header():
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and labels')
-parser.add_argument('-i', '--infile', type=str, help='Tsv table', required=True)
-parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id', required=False)
-parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file which table was build', required=True)
-parser.add_argument('-o', '--outfile', type=str, help='Vcf output file', required=True)
-parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage', required=False)
-parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele',
-                    required=False)
-parser.add_argument('-variant_dist', '--min_DIST', type=int, default=20,
-                    help='Minimum distance allowed between variants (to avoid clustered errors)', required=False)
-parser.add_argument('-str', '--strand', type=int, choices=[0, 1], default=1,
-                    help='Strand bias test (Fisher test). 0 for turn it off', required=False)
-parser.add_argument('-af', '--min_AF', type=float, default=0, help='Minimum allele frequency allowed', required=False)
-parser.add_argument('-mrd', '--mrd', type=int, choices=[0, 1], default=1,
-                    help='Print Minimal Residual Disease [Default = 1]', required=False)
-parser.add_argument('-tmpdir', '--tmpdir', default=None, help='Folder for temp files', required=False)
+parser.add_argument('-i', '--infile', type=str, help='Table in tsv format', required=True)
+parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file', required=True)
+parser.add_argument('-o', '--outfile', type=str, help='Output file in VCF format', required=True)
+parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id')
+parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage')
+parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele')
+parser.add_argument('-af', '--min_AF', type=float, default=0, help='Minimum alternative allele frequency')
+parser.add_argument('-dist', '--min_DIST', type=int, default=20, help='Minimum distance between variants')
+parser.add_argument('-sb', '--strand_bias', type=int, choices=[0, 1], default=1, help='Fisher strand bias test')
+parser.add_argument('-mrd', '--mrd', type=int, choices=[0, 1], default=1, help='Print Minimal Residual Disease')
+parser.add_argument('-tmpdir', '--tmpdir', default=None, help='Folder for temp files')
 
 # Store arguments
 args = parser.parse_args()
@@ -473,7 +469,7 @@ min_COV = args.min_COV
 min_AC = args.min_AC
 min_AF = args.min_AF
 min_DIST = args.min_DIST
-strand = args.strand
+strand = args.strand_bias
 MRD = []
 
 # Open output files
