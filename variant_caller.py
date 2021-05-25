@@ -2,6 +2,7 @@
 
 # Import Libraries
 import argparse
+import os
 import time
 import numpy
 import scipy.stats
@@ -36,7 +37,9 @@ def frequent_base(sequence):
 
 # Homopolymer filter
 def homopolymer_filter(sequence):
-    homopolymer_flag = 0
+    base_type_zero_count = 0  # number of base types (A, C, G, T) not represented in the sequence
+    low_complexity_flag = 0  # low complexity = (less than 3 base types represented or homopolymers of length >= 4)
+    homopolymer_flag = 0  # homopolymer of length >= 5
 
     if sequence != '.':
 
@@ -46,16 +49,28 @@ def homopolymer_filter(sequence):
         # Get the frequency of the homopolymer base
         max_base_freq = frequent_base(sequence)
 
+        # Count base types
+        nucleotide_list = list(sequence)
+        for base in ['A', 'C', 'G', 'T']:
+            if nucleotide_list.count(base) == 0:
+                base_type_zero_count += 1
+
+        # Set homopolymer flag
         if max_homopolymer_length >= 5 or max_base_freq >= 0.8:
             homopolymer_flag = 1
 
-    return homopolymer_flag
+        # Set low complexity flag
+        if base_type_zero_count > 1 or max_homopolymer_length >= 4:
+            low_complexity_flag = 1
+
+    return homopolymer_flag, low_complexity_flag
 
 
 # Filter variants using various filter types
 def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     # Declare variables
-    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
+    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(
+        ":")
 
     # Reference and alternative base for this variant
     ref_base, alt_base = gt.split(">")
@@ -63,8 +78,8 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     # Get counts per strand
     alt_fwd, alt_rev, ref_fwd, ref_rev = strand_counts.split("-")
 
-    # Homopolymer filter upstream and downstream
-    homopolymer = homopolymer_filter(sequence_context)
+    # Homopolymer filter on upstream / downstream region
+    homopolymer, low_complexity = homopolymer_filter(sequence_context)
 
     # Set filter based on various thresholds
     if float(alt_count) > 0 and mm > 0:
@@ -78,9 +93,13 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
         if float(alt_count_fdr) > 0.1:
             filter_criteria.append("FDR")
 
-        # Filter: homopolymer up-stream
+        # Filter: homopolymer
         if homopolymer == 1:
             filter_criteria.append("Homopolymer")
+
+        # Filter: low complexity
+        if low_complexity == 1:
+            filter_criteria.append("Low_Complexity")
 
         # Filter: minimum allele frequency
         if float(af) < min_AF:
@@ -128,6 +147,61 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     variant_call = [ref_base, alt_base, tsv, concatenated_filter_string]
 
     return variant_call
+
+
+# Print variants of various quality levels to separate files
+def print_variants(vcf_line, tsv_line):
+    # Extract fields of tsv entry
+    tsv_entries = tsv_line.split("\t")
+
+    # Check if printing is required (at least one alternative read)
+    tsv_chr = tsv_entries[0]
+    tsv_pos = int(tsv_entries[1])
+    ref_base = tsv_entries[2]
+    alt_base = tsv_entries[3]
+    alt_count = tsv_entries[6]
+    filter_string = tsv_entries[16]
+
+    # Check if indel
+    is_indel = False
+    if len(ref_base) > 1 or len(alt_base) > 1:
+        is_indel = True
+
+    # Check if high quality variant
+    high_quality = True
+
+    # General quality parameters
+    if "Homopolymer" in filter_string or \
+            "Low_AF" in filter_string or \
+            "Low_AC" in filter_string or \
+            "pvalue" in filter_string or \
+            "Strand_Imbalanced" in filter_string:
+        high_quality = False
+
+    # Indel-specific quality check
+    if is_indel:
+        if "Clustered_Variant" in filter_string or "Low_Complexity" in filter_string:
+            high_quality = False
+
+    # Check if printing to verbose output file is required (at least one alternative read)
+    if int(alt_count) > 0:
+        OUT_vcf.write(vcf_line + '\n')
+        OUT_tsv.write(tsv_line + '\n')
+
+        # Write high quality calls
+        if high_quality:
+            OUT_vcf_hq.write(vcf_line + '\n')
+            OUT_tsv_hq.write(tsv_line + '\n')
+
+    # Check if ID or monitoring variant - always write to separate files even if zero alt_count
+    if bool(monitoring_variants):
+        if tsv_chr in monitoring_variants.keys() and tsv_pos in monitoring_variants[tsv_chr].keys():
+
+            # Write either ID or monitoring variant
+            if monitoring_variants[tsv_chr][tsv_pos] == 'ID':
+                OUT_id.write(tsv_line + '\n')
+            elif monitoring_variants[tsv_chr][tsv_pos] == 'M':
+                OUT_monitoring.write(tsv_line + '\n')
 
 
 # Parse aggregated pileup statistics (tsv) file with all regions of interest and call variants
@@ -200,7 +274,9 @@ def parse_pileup_statistics():
             # Apply variant filter method
             filter_string = []
             for variant in variant_candidates:
-                variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, mm, dp, dp_hq, dist, ref_total, sequence_context)
+                variant_ref, variant_alt, variant_tsv, variant_filter_string = variant_filter(variant, mm, dp, dp_hq,
+                                                                                              dist, ref_total,
+                                                                                              sequence_context)
 
                 # Append variants
                 ref.append(variant_ref)
@@ -227,7 +303,8 @@ def parse_pileup_statistics():
                     if len(ref_index) != len(reference_seq):
 
                         # Sample info
-                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
+                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
+                            tsv[count]
 
                         # Getting normalized alternative allele
                         alt_index = alt[count]
@@ -256,7 +333,8 @@ def parse_pileup_statistics():
                     else:
 
                         # Sample info
-                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
+                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
+                            tsv[count]
 
                         alt_index = alt[count]
                         alt_base.append(alt_index)
@@ -297,7 +375,8 @@ def parse_pileup_statistics():
                     format_field = ["GT", "Alt_Count", "DP", "AF", "Perror", "Strand", "FS", "VCB", "Pvcb"]
 
                     # Info column
-                    fields = ['Variant_dist=' + str(dist), 'Vicinity=' + str(sequence_context), 'PValue=' + str(alt_count_p)]
+                    fields = ['Variant_dist=' + str(dist), 'Vicinity=' + str(sequence_context),
+                              'PValue=' + str(alt_count_p)]
 
                     # VCF variant line
                     vcf_line = ['\t'.join(vcf_fields), filter_field[allele_idx], ';'.join(fields),
@@ -312,9 +391,11 @@ def parse_pileup_statistics():
 
                     tsv_line = '\t'.join(tsv_line)
 
-                    if int(alt_count) > 0:
-                        OUT_vcf.write(vcf_line + '\n')
-                        OUT_tsv.write(tsv_line + '\n')
+                    # Print variant candidates
+                    print_variants(vcf_line, tsv_line)
+                    # if int(alt_count) > 0:
+                    #     OUT_vcf.write(vcf_line + '\n')
+                    #     OUT_tsv.write(tsv_line + '\n')
 
             # Length of ref is <= 1
             else:
@@ -328,10 +409,12 @@ def parse_pileup_statistics():
                 filter_field = filter_string[0]
 
                 # Sample info
-                alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[0]
+                alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
+                    tsv[0]
 
                 # Info column
-                fields = ['Variant_dist=' + str(dist), 'Vicinity=' + str(sequence_context), 'PValue=' + str(alt_count_p)]
+                fields = ['Variant_dist=' + str(dist), 'Vicinity=' + str(sequence_context),
+                          'PValue=' + str(alt_count_p)]
 
                 # Format column
                 format_field = ["GT", "Alt_Count", "DP", "AF", "Perror", "Strand", "FS", "VCB", "Pvcb", ]
@@ -362,10 +445,11 @@ def parse_pileup_statistics():
                             alt_count_o, out_adj, str(sequence_context), str(homopolymer), filter_field]
                 tsv_line = '\t'.join(tsv_line)
 
-                # Print variant candidate if at least one alternative read has been observed
-                if int(alt_count) > 0:
-                    OUT_vcf.write(vcf_line + '\n')
-                    OUT_tsv.write(tsv_line + '\n')
+                # Print variant candidates
+                print_variants(vcf_line, tsv_line)
+                # if int(alt_count) > 0:
+                #   OUT_vcf.write(vcf_line + '\n')
+                #   OUT_tsv.write(tsv_line + '\n')
 
 
 # Compute and write Minimal Residual Disease probability
@@ -439,9 +523,13 @@ def print_vcf_header():
 # Write column names to tsv outfile
 def print_tsv_header():
     tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AF', 'P_VAL',
-                  'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'Sequence_Context', 'Homopolymer', 'FILTER']
+                  'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'Sequence_Context', 'Homopolymer',
+                  'FILTER']
     tsv_header = '\t'.join(tsv_header)
     OUT_tsv.write(tsv_header + '\n')
+    OUT_tsv_hq.write(tsv_header)
+    OUT_monitoring.write(tsv_header)
+    OUT_id.write(tsv_header)
 
 
 # Main method ---------------------------------------------------------------------------------------------
@@ -451,6 +539,7 @@ parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and
 parser.add_argument('-i', '--infile', type=str, help='Table in tsv format', required=True)
 parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file', required=True)
 parser.add_argument('-o', '--outfile', type=str, help='Output file in VCF format', required=True)
+parser.add_argument('-m', '--monitoring', type=str, default='', help='Variants for monitoring or IDing in BED format')
 parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id')
 parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage')
 parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele')
@@ -465,18 +554,57 @@ args = parser.parse_args()
 input_file = args.infile
 sample_id = args.tumorid
 reference_file = args.reference
+monitoring_file = args.monitoring
 min_COV = args.min_COV
 min_AC = args.min_AC
 min_AF = args.min_AF
 min_DIST = args.min_DIST
 strand = args.strand_bias
-MRD = []
 
-# Open output files
+# Containers
+MRD = []
+monitoring_variants = dict()
+
+# Read monitoring and ID variants (if file is provided by parameter)
+if monitoring_file != '' and os.path.exists(monitoring_file):
+    with open(monitoring_file) as fm:
+        for current_line in fm:
+
+            # extract fields of entry
+            current_line = current_line.rstrip('\n')
+            split_line = current_line.split("\t")
+            current_chr = split_line[0]
+            current_pos = int(split_line[1]) + 1
+            current_type = split_line[3]
+
+            # Store entry in nested dictionary
+            if current_chr not in monitoring_variants:
+                monitoring_variants[current_chr] = dict()
+
+            monitoring_variants[current_chr][current_pos] = current_type
+
+# Open verbose output files
 vcf_outfile_name = args.outfile
 tsv_outfile_name = str(Path(vcf_outfile_name).with_suffix('.tsv'))
 OUT_vcf = open(vcf_outfile_name, 'w')
 OUT_tsv = open(tsv_outfile_name, 'w')
+
+# Open high quality output files
+file_base_folder = str(Path(vcf_outfile_name).parent)
+file_base_name = str(Path(vcf_outfile_name).stem)
+vcf_outfile_hq = file_base_folder + "/" + file_base_name + "_hq.vcf"
+tsv_outfile_hq = file_base_folder + "/" + file_base_name + "_hq.tsv"
+OUT_vcf_hq = open(vcf_outfile_hq, 'w')
+OUT_tsv_hq = open(tsv_outfile_hq, 'w')
+
+# Open Monitoring and ID variant files
+OUT_monitoring = ''
+OUT_id = ''
+if bool(monitoring_variants):
+    monitoring_file = file_base_folder + "/" + file_base_name + "_monitoring.tsv"
+    id_file = file_base_folder + "/" + file_base_name + "_ID.tsv"
+    OUT_monitoring = open(monitoring_file, 'w')
+    OUT_id = open(id_file, 'w')
 
 # Print output headers and column names
 print_vcf_header()
@@ -492,4 +620,10 @@ if args.mrd == 1:
 # Close output files
 OUT_vcf.close()
 OUT_tsv.close()
+OUT_vcf_hq.close()
+OUT_tsv_hq.close()
+if bool(monitoring_variants):
+    OUT_monitoring.close()
+    OUT_id.close()
+
 exit(0)

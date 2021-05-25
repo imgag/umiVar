@@ -73,7 +73,8 @@ def main():
     argument_parser.add_argument('-b', '--bed', default='', help='Bed file of the targeted regions. O-based')
     argument_parser.add_argument('-m', '--monitoring', default='',
                                  help='Bed file with genomic positions for monitoring or sample-IDing. O-based')
-    argument_parser.add_argument('-o', '--out_folder', default='', help='Output folder. Will be created if not existing')
+    argument_parser.add_argument('-o', '--out_folder', default='',
+                                 help='Output folder. Will be created if not existing')
     argument_parser.add_argument('-p', '--param', default='', help='Beta-binomial parameters table')
     argument_parser.add_argument('-mq', '--mq', default=30, help='Minimum mapping quality')
     argument_parser.add_argument('-bq', '--bq', default=20, help='Minimum base quality')
@@ -81,7 +82,8 @@ def main():
     argument_parser.add_argument('-ac', '--ac', default=5, help='Minimum number of reads supporting a variant')
     argument_parser.add_argument('-af', '--af', default=0.001, help='Minimum fraction of reads supporting a variant')
     argument_parser.add_argument('-ns', '--num_sites', default=-1, help='Number of sites to be analysed')
-    argument_parser.add_argument('-sb', '--strand_bias', default=0, choices=['0', '1'], help='Fisher strand bias filter. Default [0]')
+    argument_parser.add_argument('-sb', '--strand_bias', default=0, choices=['0', '1'],
+                                 help='Fisher strand bias filter. Default [0]')
     argument_parser.add_argument('-t', '--temp_dir', default='.', help='Temporary directory')
     argument_parser.add_argument('-kt', '--keep_temp', action='store_true', help='Don\'t delete temporary directory')
     argument_parser.add_argument('-crb', '--custom_rscript_binary', default='Rscript',
@@ -95,6 +97,14 @@ def main():
     if rscript_path != 'Rscript':
         if not os.path.isfile(rscript_path):
             raise FileNotFoundError("Given Rscript binary path '" + rscript_path + "' does not exist!")
+
+    # Check if mandatory input files exist
+    if not os.path.exists(arguments.tbam):
+        print("Input bam file (-tbam) does not exist.")
+        exit(0)
+    if not os.path.exists(arguments.ref):
+        print("Reference genome fasta file (-ref) does not exist.")
+        exit(0)
 
     # Use tumor BAM filename as ID
     tumor_id = os.path.basename(os.path.splitext(arguments.tbam)[0])
@@ -257,17 +267,35 @@ def main():
 
     # Generate a VCF file
     vcf_file = out_dir + "/" + tumor_id + ".vcf"
-    variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
-                             ' -i ' + out_dir + '/stats.tsv' + \
-                             ' -tID ' + tumor_id + \
-                             ' -ref ' + arguments.ref + \
-                             ' -o ' + vcf_file +\
-                             ' -cov 10' + \
-                             ' -ac ' + str(arguments.ac) + \
-                             ' -af ' + str(arguments.af) + \
-                             ' -sb ' + str(arguments.strand_bias) + \
-                             ' -dist ' + str(arguments.dist) + \
-                             ' -tmpdir ' + out_dir
+
+    # Variant calling in complete ROI
+    if arguments.monitoring == '':
+        variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
+                                 ' -i ' + out_dir + '/stats.tsv' + \
+                                 ' -tID ' + tumor_id + \
+                                 ' -ref ' + arguments.ref + \
+                                 ' -o ' + vcf_file + \
+                                 ' -cov 10' + \
+                                 ' -ac ' + str(arguments.ac) + \
+                                 ' -af ' + str(arguments.af) + \
+                                 ' -sb ' + str(arguments.strand_bias) + \
+                                 ' -dist ' + str(arguments.dist) + \
+                                 ' -tmpdir ' + out_dir
+
+    # Variant calling in complete ROI, with focus on SNVs for monitoring or IDing
+    else:
+        variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
+                                 ' -i ' + out_dir + '/stats.tsv' + \
+                                 ' -tID ' + tumor_id + \
+                                 ' -ref ' + arguments.ref + \
+                                 ' -m ' + arguments.monitoring + \
+                                 ' -o ' + vcf_file + \
+                                 ' -cov 10' + \
+                                 ' -ac ' + str(arguments.ac) + \
+                                 ' -af ' + str(arguments.af) + \
+                                 ' -sb ' + str(arguments.strand_bias) + \
+                                 ' -dist ' + str(arguments.dist) + \
+                                 ' -tmpdir ' + out_dir
 
     try:
         subprocess.run(variant_caller_command, shell=True)
@@ -297,27 +325,6 @@ def main():
     end_time = time.time()
     time_taken = end_time - start_time
     print('\n\nElapsed time for R plot error rates: ' + str(time_taken) + "\n\n")
-
-    # Copy results to output folder
-#   out_files = [
-#       'coverage.pdf',
-#       'error_rates_per_nucleotide.pdf',
-#       'error_rates.pdf',
-#       'error_rates.txt',
-#       'error_rates_per_nucleotide.txt',
-#       'alternative_count.pdf',
-#       'alternative_count_zoom.pdf',
-#       'beta_binom_parameters.txt',
-#       'dp_freq.tsv',
-#       'stats.tsv'
-#   ]
-#
-#    for f in out_files:
-#        try:
-#            os.rename(os.path.join(out_dir, f), os.path.join(out_dir, f))
-#        except FileNotFoundError:
-#            print("Could not copy file " + f + ", does not exist.")
-#            pass
 
 
 # Run program
