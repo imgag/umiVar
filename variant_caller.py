@@ -478,6 +478,7 @@ def compute_mrd():
 
 # Print VCF header and column names
 def print_vcf_header():
+
     # Define VCF header
     date = time.strftime("%d/%m/%Y")  # dd/mm/yyyy format
     vcf_format = "##fileformat=VCFv4.1"
@@ -512,12 +513,22 @@ def print_vcf_header():
     # Write VCF header and column names
     vcf_column_names = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', sample_id]
     vcf_column_names_line = "#" + '\t'.join(vcf_column_names)
+
+    # Print to verbose VCF file
     OUT_vcf.write(vcf_format + '\n')
     OUT_vcf.write(date_line + '\n')
     OUT_vcf.write(source + '\n')
     OUT_vcf.write(reference + '\n')
     OUT_vcf.write(concepts + '\n')
     OUT_vcf.write(vcf_column_names_line + '\n')
+
+    # Print to high quality VCF file
+    OUT_vcf_hq.write(vcf_format + '\n')
+    OUT_vcf_hq.write(date_line + '\n')
+    OUT_vcf_hq.write(source + '\n')
+    OUT_vcf_hq.write(reference + '\n')
+    OUT_vcf_hq.write(concepts + '\n')
+    OUT_vcf_hq.write(vcf_column_names_line + '\n')
 
 
 # Write column names to tsv outfile
