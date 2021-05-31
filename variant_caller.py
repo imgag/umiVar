@@ -539,8 +539,9 @@ def print_tsv_header():
     tsv_header = '\t'.join(tsv_header)
     OUT_tsv.write(tsv_header + '\n')
     OUT_tsv_hq.write(tsv_header)
-    OUT_monitoring.write(tsv_header)
-    OUT_id.write(tsv_header)
+    if bool(monitoring_variants):
+        OUT_monitoring.write(tsv_header)
+        OUT_id.write(tsv_header)
 
 
 # Main method ---------------------------------------------------------------------------------------------
