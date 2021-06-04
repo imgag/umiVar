@@ -69,8 +69,7 @@ def homopolymer_filter(sequence):
 # Filter variants using various filter types
 def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
     # Declare variables
-    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(
-        ":")
+    gt, sig, alt_count, af, alt_count_p, alt_count_fdr, strand_counts, strand_bias, alt_count_other, out_adj = variant.split(":")
 
     # Reference and alternative base for this variant
     ref_base, alt_base = gt.split(">")
@@ -105,7 +104,8 @@ def variant_filter(variant, mm, depth, depth_hq, dist, ref_t, sequence_context):
         if float(af) < min_AF:
             filter_criteria.append("Low_AF")
 
-        if int(alt_fwd) == 0 or int(alt_rev) == 0:
+        # Strand imbalanced (very low alt counts on one strand)
+        if int(alt_fwd) <= 1 or int(alt_rev) <= 1:
             filter_criteria.append("Strand_Imbalanced")
 
         # Filter: minimum depth
@@ -160,7 +160,8 @@ def print_variants(vcf_line, tsv_line):
     ref_base = tsv_entries[2]
     alt_base = tsv_entries[3]
     alt_count = tsv_entries[6]
-    filter_string = tsv_entries[16]
+    multi_umi_alt_depth = tsv_entries[9]
+    filter_string = tsv_entries[19]
 
     # Check if indel
     is_indel = False
@@ -183,8 +184,8 @@ def print_variants(vcf_line, tsv_line):
         if "Clustered_Variant" in filter_string or "Low_Complexity" in filter_string:
             high_quality = False
 
-    # Check if printing to verbose output file is required (at least one alternative read)
-    if int(alt_count) > 0:
+    # Check if printing to verbose output file is required (at least one alternative multi-UMI read)
+    if int(alt_count) > 0 and int(multi_umi_alt_depth) > 0:
         OUT_vcf.write(vcf_line + '\n')
         OUT_tsv.write(tsv_line + '\n')
 
@@ -209,7 +210,35 @@ def parse_pileup_statistics():
     # Open fasta file with pysam
     in_fasta = pysam.FastaFile(reference_file)
 
-    # Parse input file
+    # Parse tsv file with counts of singleton UMIs (dedup_DP1.tsv)
+    singleton_dp = dict()
+    with open(singleton_umi_file) as s1:
+        for singleton_line in s1:
+
+            # Ignore header lines
+            if singleton_line.startswith('CHROM'):
+                continue
+
+            # Extract columns
+            singleton_line = singleton_line.rstrip('\n')
+            singleton_column = singleton_line.split("\t")
+
+            # Generate locus-ID for dictionary
+            locus_id = singleton_column[0] + "_" + singleton_column[1]
+
+            # Store singleton-depth info in nested dictionary
+            if locus_id not in singleton_dp:
+                singleton_dp[locus_id] = dict()
+
+            singleton_dp[locus_id]['A'] = singleton_column[8]
+            singleton_dp[locus_id]['C'] = singleton_column[14]
+            singleton_dp[locus_id]['T'] = singleton_column[20]
+            singleton_dp[locus_id]['G'] = singleton_column[26]
+            singleton_dp[locus_id]['I'] = singleton_column[32]
+            singleton_dp[locus_id]['D'] = singleton_column[38]
+            singleton_dp[locus_id]['.'] = 0
+
+    # Parse input tsv file (stats.txt)
     with open(input_file) as f1:
         for line in f1:
             line = line.rstrip('\n')
@@ -242,6 +271,7 @@ def parse_pileup_statistics():
             # Assign values to common VCF columns
             chrom = fields[chrom_index]
             pos = fields[pos_index]
+            ref_nucleotide = fields[2]
             snv_id = '.'
             ref_fwd = int(fields[ref_fwd_index])
             ref_rev = int(fields[ref_rev_index])
@@ -303,8 +333,7 @@ def parse_pileup_statistics():
                     if len(ref_index) != len(reference_seq):
 
                         # Sample info
-                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
-                            tsv[count]
+                        alt_count, dp_hq, allele_frequency, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
 
                         # Getting normalized alternative allele
                         alt_index = alt[count]
@@ -315,16 +344,16 @@ def parse_pileup_statistics():
                         alt_count_all.append(alt_count)
 
                         # Determine genotype:
-                        if float(ab_score) > 0.8:
+                        if float(allele_frequency) > 0.8:
                             genotype = "1/1"
-                        elif float(ab_score) > 0.3:
+                        elif float(allele_frequency) > 0.3:
                             genotype = "0/1"
                         else:
                             genotype = "./."
 
                         filter_field.append(filter_string[count])
 
-                        sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), base_strand, str(fisher),
+                        sample_index = [genotype, str(alt_count), str(dp_hq), str(allele_frequency), base_strand, str(fisher),
                                         str(alt_count_o), str(out_adj), str(alt_count_pad_j)]
                         sample.append(':'.join(sample_index))
 
@@ -333,24 +362,23 @@ def parse_pileup_statistics():
                     else:
 
                         # Sample info
-                        alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
-                            tsv[count]
+                        alt_count, dp_hq, allele_frequency, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = tsv[count]
 
                         alt_index = alt[count]
                         alt_base.append(alt_index)
                         alt_count_all.append(alt_count)
 
                         # Determine genotype:
-                        if float(ab_score) > 0.8:
+                        if float(allele_frequency) > 0.8:
                             genotype = "1/1"
-                        elif float(ab_score) > 0.3:
+                        elif float(allele_frequency) > 0.3:
                             genotype = "0/1"
                         else:
                             genotype = "./."
 
                         filter_field.append(filter_string[count])
 
-                        sample_index = [genotype, str(alt_count), str(dp_hq), str(ab_score), str(alt_count_pad_j),
+                        sample_index = [genotype, str(alt_count), str(dp_hq), str(allele_frequency), str(alt_count_pad_j),
                                         base_strand, str(fisher),
                                         str(alt_count_o), str(out_adj)]
                         sample.append(':'.join(sample_index))
@@ -383,19 +411,31 @@ def parse_pileup_statistics():
                                 ':'.join(format_field), sample[allele_idx]]
                     vcf_line = '\t'.join(vcf_line)
 
+                    # Extract DP of singleton UMI fragments for alternative base at locus
+                    locus_id = str(chrom) + "_" + str(pos)
+                    alt_key = alt_base[allele_idx]
+                    if len(reference_seq) > 1:
+                        alt_key = 'D'
+                    if len(alt_key) > 1:
+                        alt_key = 'I'
+
+                    singleton_ref_depth = singleton_dp[locus_id][ref_nucleotide]
+                    singleton_alt_depth = singleton_dp[locus_id][alt_key]
+                    multi_umi_ref_depth = int(ref_total) - int(singleton_ref_depth)
+                    multi_umi_alt_depth = int(alt_count_all[allele_idx]) - int(singleton_alt_depth)
+                    multi_umi_af = multi_umi_alt_depth / (multi_umi_ref_depth + multi_umi_alt_depth)
+
                     # TSV line
                     tsv_line = [str(chrom), str(pos), str(reference_seq), str(alt_base[allele_idx]), str(dp_hq),
-                                str(ref_total), str(alt_count_all[allele_idx]), str(ab_score), alt_count_p,
-                                alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, str(sequence_context),
-                                str(homopolymer), filter_field[allele_idx]]
+                                str(ref_total), str(alt_count_all[allele_idx]), str(allele_frequency),
+                                str(multi_umi_ref_depth), str(multi_umi_alt_depth), str(round(multi_umi_af, 6)),
+                                alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj,
+                                str(sequence_context), str(homopolymer), filter_field[allele_idx]]
 
                     tsv_line = '\t'.join(tsv_line)
 
                     # Print variant candidates
                     print_variants(vcf_line, tsv_line)
-                    # if int(alt_count) > 0:
-                    #     OUT_vcf.write(vcf_line + '\n')
-                    #     OUT_tsv.write(tsv_line + '\n')
 
             # Length of ref is <= 1
             else:
@@ -409,7 +449,7 @@ def parse_pileup_statistics():
                 filter_field = filter_string[0]
 
                 # Sample info
-                alt_count, dp_hq, ab_score, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
+                alt_count, dp_hq, allele_frequency, ref_total, alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj, homopolymer = \
                     tsv[0]
 
                 # Info column
@@ -423,33 +463,44 @@ def parse_pileup_statistics():
                 MRD.append(float(alt_count_p))
 
                 # Determine genotype:
-                if float(ab_score) > 0.8:
+                if float(allele_frequency) > 0.8:
                     genotype = "1/1"
-                elif float(ab_score) > 0.3:
+                elif float(allele_frequency) > 0.3:
                     genotype = "0/1"
                 else:
                     genotype = "./."
 
-                sample = [genotype, str(alt_count), str(dp_hq), str(ab_score), str(alt_count_pad_j), base_strand,
+                sample = [genotype, str(alt_count), str(dp_hq), str(allele_frequency), str(alt_count_pad_j), base_strand,
                           str(fisher),
                           str(alt_count_o), str(out_adj)]
 
                 # Compile VCF entry
-                vcf_line = ['\t'.join(vcf_fields), filter_field, ';'.join(fields), ':'.join(format_field),
-                            ':'.join(sample)]
+                vcf_line = ['\t'.join(vcf_fields), filter_field, ';'.join(fields), ':'.join(format_field), ':'.join(sample)]
                 vcf_line = '\t'.join(vcf_line)
+
+                # Extract DP of singleton UMI fragments for alternative base at locus
+                locus_id = str(chrom) + "_" + str(pos)
+                alt_key = alt[0]
+                if len(ref[0]) > 1:
+                    alt_key = 'D'
+                if len(alt_key) > 1:
+                    alt_key = 'I'
+
+                singleton_ref_depth = singleton_dp[locus_id][ref_nucleotide]
+                singleton_alt_depth = singleton_dp[locus_id][alt_key]
+                multi_umi_ref_depth = int(ref_total) - int(singleton_ref_depth)
+                multi_umi_alt_depth = int(alt_count) - int(singleton_alt_depth)
+                multi_umi_af = multi_umi_alt_depth / (multi_umi_ref_depth + multi_umi_alt_depth)
 
                 # Compile TSV entry
                 tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), str(dp_hq), str(ref_total),
-                            str(alt_count), str(ab_score), alt_count_p, alt_count_pad_j, base_strand, fisher,
-                            alt_count_o, out_adj, str(sequence_context), str(homopolymer), filter_field]
+                            str(alt_count), str(allele_frequency), str(multi_umi_ref_depth), str(multi_umi_alt_depth),
+                            str(round(multi_umi_af, 6)), alt_count_p, alt_count_pad_j, base_strand, fisher, alt_count_o, out_adj,
+                            str(sequence_context), str(homopolymer), filter_field]
                 tsv_line = '\t'.join(tsv_line)
 
                 # Print variant candidates
                 print_variants(vcf_line, tsv_line)
-                # if int(alt_count) > 0:
-                #   OUT_vcf.write(vcf_line + '\n')
-                #   OUT_tsv.write(tsv_line + '\n')
 
 
 # Compute and write Minimal Residual Disease probability
@@ -533,10 +584,10 @@ def print_vcf_header():
 
 # Write column names to tsv outfile
 def print_tsv_header():
-    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AF', 'P_VAL',
-                  'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj', 'Sequence_Context', 'Homopolymer',
-                  'FILTER']
-    tsv_header = '\t'.join(tsv_header)  + '\n'
+    tsv_header = ['CHROM', 'POS', 'REF', 'ALT', 'DP_HQ', 'REFt', 'ALT_COUNT', 'AF', 'Multi_REF', 'Multi_ALT',
+                  'Multi_AF', 'P_VAL', 'P_VAL_adj', 'STRAND', 'FISHER', 'ALT_COUNT_o', 'P_VALo_adj',
+                  'Sequence_Context', 'Homopolymer', 'FILTER']
+    tsv_header = '\t'.join(tsv_header) + '\n'
     OUT_tsv.write(tsv_header)
     OUT_tsv_hq.write(tsv_header)
     if bool(monitoring_variants):
@@ -548,14 +599,15 @@ def print_tsv_header():
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and labels')
-parser.add_argument('-i', '--infile', type=str, help='Table in tsv format', required=True)
+parser.add_argument('-i', '--infile', type=str, help='Table in tsv format (stats.txt)', required=True)
+parser.add_argument('-s', '--single', type=str, help='Table in tsv format (dedup_DP1.tsv)', required=True)
 parser.add_argument('-ref', '--reference', type=str, help='Reference fasta file', required=True)
 parser.add_argument('-o', '--outfile', type=str, help='Output file in VCF format', required=True)
 parser.add_argument('-m', '--monitoring', type=str, default='', help='Variants for monitoring or IDing in BED format')
 parser.add_argument('-tID', '--tumorid', type=str, default='Tumor', help='Tumor sample id')
 parser.add_argument('-cov', '--min_COV', type=int, default=10, help='Minimum Coverage')
 parser.add_argument('-ac', '--min_AC', type=int, default=3, help='Minimum reads supporting alternative allele')
-parser.add_argument('-af', '--min_AF', type=float, default=0, help='Minimum alternative allele frequency')
+parser.add_argument('-af', '--min_AF', type=float, default=0.001, help='Minimum alternative allele frequency')
 parser.add_argument('-dist', '--min_DIST', type=int, default=20, help='Minimum distance between variants')
 parser.add_argument('-sb', '--strand_bias', type=int, choices=[0, 1], default=1, help='Fisher strand bias test')
 parser.add_argument('-mrd', '--mrd', type=int, choices=[0, 1], default=1, help='Print Minimal Residual Disease')
@@ -564,6 +616,7 @@ parser.add_argument('-tmpdir', '--tmpdir', default=None, help='Folder for temp f
 # Store arguments
 args = parser.parse_args()
 input_file = args.infile
+singleton_umi_file = args.single
 sample_id = args.tumorid
 reference_file = args.reference
 monitoring_file = args.monitoring

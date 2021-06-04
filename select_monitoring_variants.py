@@ -47,10 +47,10 @@ class MonitoringVariant:
 
                 # Extract columns: chr, start, end, ref, obs, tumor_af, tumor_dp, normal_af, normal_dp, filter,
                 # quality, gene, variant_type, coding_and_splicing, OMIM, ClinVar, HGMD, RepeatMasker,
-                # dbSNP, 1000g, gnomAD	gnomAD_hom_hemi	gnomAD_sub	ESP_sub	phyloP	Sift	PolyPhen	fathmm-MKL
-                # CADD	REVEL	MaxEntScan	GeneSplicer	dbscSNV	COSMIC	NGSD_som_c	NGSD_som_p	NGSD_hom	NGSD_het
-                # classification	classification_comment	validation	comment	gene_info	CGI_id	CGI_driver_statement
-                # CGI_gene_role	CGI_transcript	CGI_gene	CGI_consequence	ncg_oncogene	ncg_tsg
+                # dbSNP, 1000g, gnomAD, gnomAD_hom_hemi, gnomAD_sub, ESP_sub, phyloP, Sift, PolyPhen, fathmm-MKL,
+                # CADD, REVEL, MaxEntScan, GeneSplicer, dbscSNV, COSMIC, NGSD_som_c, NGSD_som_p, NGSD_hom, NGSD_het
+                # classification, classification_comment, validation, comment, gene_info, CGI_id, CGI_driver_statement
+                # CGI_gene_role, CGI_transcript, CGI_gene, CGI_consequence, ncg_oncogene, ncg_tsg
                 gsv_column = gsv_line.split("\t")
 
                 # Score driverness
@@ -165,7 +165,7 @@ class MonitoringVariant:
 
                 # Generate locus ID from chr and pos (note: deletions in GSvar are not pos - 1
                 locus_vcf = vcf_column[0] + "_" + vcf_column[1]
-                locus_gsv = locus_vcf;
+                locus_gsv = locus_vcf
                 if len(vcf_column[3]) > 1:
                     gsv_pos = int(vcf_column[1]) + 1
                     locus_gsv = vcf_column[0] + "_" + str(gsv_pos)

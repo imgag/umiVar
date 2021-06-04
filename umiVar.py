@@ -272,6 +272,7 @@ def main():
     if arguments.monitoring == '':
         variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
                                  ' -i ' + out_dir + '/stats.tsv' + \
+                                 ' -s ' + out_dir + '/dedup_DP1.tsv' + \
                                  ' -tID ' + tumor_id + \
                                  ' -ref ' + arguments.ref + \
                                  ' -o ' + vcf_file + \
@@ -286,6 +287,7 @@ def main():
     else:
         variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
                                  ' -i ' + out_dir + '/stats.tsv' + \
+                                 ' -s ' + out_dir + '/dedup_DP1.tsv' + \
                                  ' -tID ' + tumor_id + \
                                  ' -ref ' + arguments.ref + \
                                  ' -m ' + arguments.monitoring + \
