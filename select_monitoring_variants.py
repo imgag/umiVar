@@ -172,12 +172,12 @@ class MonitoringVariant:
 
                 # Get gene name
                 gene = ""
-                if locus_gsv in self.gsv_gene:
-                    gene = self.gsv_gene[locus_gsv]
                 if vep_annotation[3] != "":
                     gene = vep_annotation[3]
+                if locus_gsv in self.gsv_gene:
+                    gene = self.gsv_gene[locus_gsv]
 
-                # Get VEP Impact
+                # Get Impact
                 impact = "OTHER"
                 if "LOW" in info_pairs['CSQ']:
                     impact = "LOW"
@@ -376,8 +376,8 @@ def main():
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     else:
-        print("Output directory already exists. Please specify new output folder.")
-        exit(0)
+        print("Warning: output directory already exists and will be overwritten!")
+        # exit(0)
 
     # Instantiate MonitoringVariant object and run the variant evaluation
     evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af)
