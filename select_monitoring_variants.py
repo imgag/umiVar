@@ -3,7 +3,7 @@ import argparse
 import sys
 import os
 import pysam
-
+import gzip
 
 # Identifies and stores SNVs ------------------------------------------------------------------------------------------
 class MonitoringVariant:
@@ -101,7 +101,16 @@ class MonitoringVariant:
         in_fasta = pysam.FastaFile(reference_fasta)
 
         # Parse vcf file line by line
-        with open(self.input_vcf_file) as vcf_file:
+        gzipped = False
+        gzip_magic_number = "1f8b"
+        fh_vcf_in = open(self.input_vcf_file)
+
+        if fh_vcf_in.read(2).encode("hex") == gzip_magic_number:
+            fh_vcf_in = gzip.open(self.input_vcf_file)
+        else:
+            fh_vcf_in = open(self.input_vcf_file)
+
+        with fh_vcf_in as vcf_file:
             for vcf_line in vcf_file:
                 vcf_line = vcf_line.rstrip('\n')
 
@@ -271,8 +280,9 @@ class MonitoringVariant:
                 fh_tsv.write(key + "\n")
                 fh_vcf.write(self.scoring_VCF[key] + "\n")
                 columns = key.split("\t")
-                end = int(columns[1]) + 1
-                fh_bed.write(columns[0] + "\t" + columns[1] + "\t" + str(end) + "\n")
+                start = int(columns[1]) - 1
+                end = int(columns[1])
+                fh_bed.write(columns[0] + "\t" + str(start) + "\t" + str(end) + "\n")
                 counter += 1
 
         for key in sorted(self.off_target_TSV, key=self.off_target_TSV.get, reverse=True):
@@ -281,10 +291,11 @@ class MonitoringVariant:
             # Fill-up 30 SNPs for monitoring
             if counter < 30:
                 fh_tsv.write(key + "\n")
-                fh_vcf.write(self.scoring_VCF[key] + "\n")
+                fh_vcf.write(self.off_target_VCF[key] + "\n")
                 columns = key.split("\t")
-                end = int(columns[1]) + 1
-                fh_bed.write(columns[0] + "\t" + columns[1] + "\t" + str(end) + "\n")
+                start = int(columns[1]) - 1
+                end = int(columns[1])
+                fh_bed.write(columns[0] + "\t" + str(start) + "\t" + str(end) + "\n")
                 counter += 1
 
         # Close output files
