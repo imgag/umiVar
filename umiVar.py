@@ -116,32 +116,13 @@ def main():
     out_dir = arguments.out_folder
 
     # No output folder specified: create folder in current working directory
-    if out_dir == '':
-        out_dir = os.getcwd()
-        out_dir += "/umiVar_out_" + tumor_id
+    if not out_dir:
+        out_dir = "umiVar_out_" + tumor_id
 
-    # Full path to output folder specified
-    elif out_dir[0] == "/":
-        # Do not overwrite existing folders
-        if os.path.exists(out_dir):
-            print("Output directory already exists. Please specify new output folder.")
-            exit(0)
+    if os.path.exists(out_dir):
+            print("Output directory already exists. Files might get overwritten.")
 
-    #  Relative path to output folder specified
-    elif out_dir[0:2] == "./":
-        out_dir = os.getcwd() + "/" + out_dir[2:]
-
-    # Specified output directory is unclear
-    else:
-        print("Please specify full or relative path to output directory or remove the parameter completely.")
-        exit(0)
-
-    # Create output directory
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    else:
-        print("Output directory already exists. Please specify new output folder.")
-        exit(0)
+    os.makedirs(out_dir, exist_ok = True)    
 
     # Split BAM file into 4 BAM files with 1 or 2 or 3 or 4 and more barcode duplicates
     out_prefix = out_dir + '/dedup'
