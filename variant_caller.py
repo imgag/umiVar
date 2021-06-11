@@ -490,7 +490,10 @@ def parse_pileup_statistics():
                 singleton_alt_depth = singleton_dp[locus_id][alt_key]
                 multi_umi_ref_depth = int(ref_total) - int(singleton_ref_depth)
                 multi_umi_alt_depth = int(alt_count) - int(singleton_alt_depth)
-                multi_umi_af = multi_umi_alt_depth / (multi_umi_ref_depth + multi_umi_alt_depth)
+                try:
+                    multi_umi_af = multi_umi_alt_depth / (multi_umi_ref_depth + multi_umi_alt_depth)
+                except ZeroDivisionError:
+                    multi_umi_af = 0
 
                 # Compile TSV entry
                 tsv_line = [str(chrom), str(pos), str(ref[0]), str(alt[0]), str(dp_hq), str(ref_total),
