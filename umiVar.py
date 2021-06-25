@@ -72,7 +72,7 @@ def main():
     argument_parser.add_argument('-r', '--ref', required=True, help='Reference genome - fasta')
     argument_parser.add_argument('-b', '--bed', default='', help='Bed file of the targeted regions. O-based')
     argument_parser.add_argument('-m', '--monitoring', default='',
-                                 help='Bed file with genomic positions for monitoring or sample-IDing. O-based')
+                                 help='VCF file with genomic positions for monitoring or sample-IDing.')
     argument_parser.add_argument('-o', '--out_folder', default='',
                                  help='Output folder. Will be created if not existing')
     argument_parser.add_argument('-p', '--param', default='', help='Beta-binomial parameters table')
@@ -120,9 +120,9 @@ def main():
         out_dir = "umiVar_out_" + tumor_id
 
     if os.path.exists(out_dir):
-            print("Output directory already exists. Files might get overwritten.")
+        print("Output directory already exists. Files might get overwritten.")
 
-    os.makedirs(out_dir, exist_ok = True)    
+    os.makedirs(out_dir, exist_ok=True)
 
     # Split BAM file into 4 BAM files with 1 or 2 or 3 or 4 and more barcode duplicates
     out_prefix = out_dir + '/dedup'
