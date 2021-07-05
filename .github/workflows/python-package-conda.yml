@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         pwd
-        conda env update --file environment.yml --name umiVar
+        conda env update --file environment.yaml --name umiVar
     - name: Download reference genome
       run: |
         cd Test
