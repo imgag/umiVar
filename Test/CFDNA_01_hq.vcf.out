@@ -1,0 +1,47 @@
+##fileformat=VCFv4.1
+##fileDate=05/07/2021
+##source=umiVar2
+##reference=GRCh37.fa
+##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
+##INFO=<ID=Upstream,Number=.,Type=String,Description="Upstream sequence (5 nucleotides)">
+##INFO=<ID=Downstream,Number=.,Type=String,Description="Downstream sequence (5 nucleotides)">
+##INFO=<ID=PValue,Number=.,Type=String,Description="Uncorrected p-value">
+##FILTER=<ID=PASS,Description="Passed filter">
+##FILTER=<ID=Low_COV,Description="Low coverage">
+##FILTER=<ID=Strand_imbalanced,Description="All alternative reads found in only one strand">
+##FILTER=<ID=Low_AC,Description="Less than defined minimum of alternative counts">
+##FILTER=<ID=Clustered_Variant,Description="Clustered variants">
+##FILTER=<ID=LC_Upstream,Description="Low complexity region (5bps) upstream. ≥ 80% of bases show the same nucleotide or tandem of ≥ 3 equal nucleotides in a row">
+##FILTER=<ID=LC_Downstream,Description="Low complexity region (5bps) downstream. ≥ 80% of bases show the same nucleotide  or tandem of ≥ 3 equal nucleotides in a row">
+##FILTER=<ID=Error,Description="Alternative counts inside the expected error rate distribution">
+##FILTER=<ID=Fisher_Strand,Description="Strand bias based on fisher test">
+##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
+##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts">
+##FORMAT=<ID=AF,Number=1,Type=Float,Description="Alternative allele fraction">
+##FORMAT=<ID=M_REF,Number=1,Type=Integer,Description="Multi-UMI reference-like read counts">
+##FORMAT=<ID=M_AC,Number=.,Type=Integer,Description="Multi-UMI alternative read counts">
+##FORMAT=<ID=M_AF,Number=1,Type=Float,Description="Multi-UMI alternative allele fraction">
+##FORMAT=<ID=Pval,Number=1,Type=Float,Description="P-value to belong to the error rate distribution (beta binomial distribution)">
+##FORMAT=<ID=FDR,Number=1,Type=Float,Description="Q-value to belong to the error rate distribution (beta binomial distribution) after Benjamini-Hochberg correction (FDR)">
+##FORMAT=<ID=Strand,Number=1,Type=String,Description="Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse">
+##FORMAT=<ID=FS,Number=1,Type=Float,Description="Fisher strand bias test (q-value)">
+##FORMAT=<ID=OAAC,Number=1,Type=Integer,Description="Other Alternative Allele Count = count of reads showing a different alternative allele">
+##FORMAT=<ID=MAL,Number=1,Type=Float,Description="Multi-allele likelihood = Q-value (FDR) for other alternative alleles to belong to the error rate distribution (beta binomial distribution)">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CFDNA_01
+chr1	115256530	.	G	T	.	PASS	Variant_dist=6;Vicinity=TTCTTGTCCAG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:311:12276:0.025334:6974:165:0.023112:3.05e-10:1.53e-07:272-39-9299-2663:4.21e-02:3:1.00e+00
+chr1	115256536	.	C	T	.	PASS	Variant_dist=6;Vicinity=TCCAGCTGTAT	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:119:12600:0.009444:7162:76:0.0105:1.01e-09:4.04e-07:93-26-9805-2673:1.00e+00:3:1.00e+00
+chr1	115256609	.	T	G	.	Clustered_Variant	Variant_dist=2;Vicinity=GGGTGTGGAGG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:80:9762:0.008195:5535:31:0.00557:3.33e-06:1.11e-03:2-78-5648-4029:6.99e-24:5:1.00e+00
+chr1	115256625	.	A	C	.	Low_Complexity;Clustered_Variant;Low_Qual_Pos	Variant_dist=1;Vicinity=GGGGCAGGGAG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:600:4918:0.122001:2353:579:0.197476:2.20e-17:4.41e-14:3-597-3461-687:0.00e+00:6:8.08e-01
+chr1	115256669	.	G	A	.	PASS	Variant_dist=33;Vicinity=GGAATGCAATG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:3396:5192:0.654083:1074:2076:0.659048:0.00e+00:0.00e+00:5-3391-1-1795:1.00e+00:0:1.00e+00
+chr1	160786632	.	CT	C	.	FDR	Variant_dist=38;Vicinity=AGTTTCTTTCT	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:7:5988:0.001169:4222:2:0.000473:3.12e-02:1.00e+00:2-5-2899-3079:1.00e+00:3:7.45e-01
+chr1	160786670	.	A	G	.	PASS	Variant_dist=45530001;Vicinity=TCTCTATTTAC	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:1277:5551:0.230049:3038:927:0.233796:1.76e-39:1.77e-36:648-629-2121-2146:1.00e+00:7:1.00e+00
+chr1	233448413	.	C	T	.	PASS	Variant_dist=73;Vicinity=AACTACACTCA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:3585:4945:0.724975:1021:2662:0.72278:0.00e+00:0.00e+00:1829-1756-746-612:1.00e+00:2:1.00e+00
+chr1	233448532	.	TA	T	.	FDR	Variant_dist=76;Vicinity=ATATGTAAAGG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:7:5666:0.001235:4051:2:0.000493:1.96e-02:1.00e+00:3-4-2746-2912:1.00e+00:1:1.00e+00
+chr1	233448608	.	A	G	.	PASS	Variant_dist=195;Vicinity=CCATCAGTCAA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:1248:1838:0.678999:423:899:0.68003:4.52e-57:9.07e-54:73-1175-53-537:1.00e+00:0:1.00e+00
+chr1	47395874	.	A	C	.	FDR	Variant_dist=27;Vicinity=CGTGCAATGGG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:11:6730:0.001634:4749:8:0.001682:1.69e-03:2.61e-01:2-9-3370-3346:1.00e+00:3:1.00e+00
+chr1	47395943	.	CT	C	.	PASS	Variant_dist=30;Vicinity=GCCACCTTCAG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:17:5284:0.003217:3881:5:0.001287:1.49e-06:7.49e-04:3-14-2054-3213:1.00e+00:0:1.00e+00
+chr1	47395973	.	G	A	.	PASS	Variant_dist=30;Vicinity=TTCCCGATGCA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:2517:3306:0.761343:594:1910:0.76278:0.00e+00:0.00e+00:667-1850-216-572:1.00e+00:1:1.00e+00
+chr11	5709028	.	C	T	.	PASS	Variant_dist=6;Vicinity=CCAGACGAGAA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:2832:6060:0.467327:2280:1960:0.462264:0.00e+00:0.00e+00:1392-1440-1644-1584:1.00e+00:0:1.00e+00
