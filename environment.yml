@@ -1,0 +1,24 @@
+name: umivar
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.7
+  - scipy
+  - pybedtools
+  - pysam
+  - numpy
+  - networkx
+  - bioconductor-survcomp
+  - r-base=3.4
+  - r-argparse
+  - r-bbmle
+  - r-data.table
+  - r-ggplot2
+  - r-gridextra
+  - r-seqinr
+  - r-vgam
+  - r-scales
+  - r-crayon
+  - r-pkgconfig
