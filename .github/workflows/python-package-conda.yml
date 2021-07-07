@@ -19,11 +19,10 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies and setup env
-      run: |
-        conda env update --file environment.yaml
+      run: conda env update --file environment.yaml
+        
     - name: Activate conda env
-      run: |
-        conda activate umivar
+      run: source ${CONDA}/bin/activate umivar
     - name: Download reference genome
       run: |
         cd Test
@@ -31,17 +30,3 @@ jobs:
     - name: Run cfDNA test (personalized)
       run: |
         make all
-    
-  example-2-linux:
-    name: Ex2 Linux
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          environment-file: environment.yaml
-          activate-environment: umivar
-      - run: |
-          pwd
-          conda info
-          conda list
