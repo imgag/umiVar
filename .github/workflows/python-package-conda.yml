@@ -20,8 +20,8 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        $CONDA/conda env create --file environment.yaml
-        $CONDA/conda activate umivar
+        conda env create --file environment.yaml
+        conda activate umivar
     - name: Download reference genome
       run: |
         cd Test
