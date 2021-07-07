@@ -32,7 +32,7 @@ unpack_reference:
 CFDNA_02: run_CFDNA_02 check_CFDNA_02
 
 run_CFDNA_02:
-	python3 ../umiVar.py -tbam CFDNA_02.bam -b CFDNA_02.bed -r chr7.fa -o umiVar_CFDNA_02/ -m CFDNA_02_monitoring.vcf -t umiVar_CFDNA_02/tmp/ -crb ../R-4.0.5/bin/Rscript
+	python3 ../umiVar.py -tbam CFDNA_02.bam -b CFDNA_02.bed -r chr7.fa -o umiVar_CFDNA_02/ -m CFDNA_02_monitoring.vcf -t umiVar_CFDNA_02/tmp/
 
 check_CFDNA_02:
 	diff -u CFDNA_02.tsv.out umiVar_CFDNA_02/CFDNA_02.tsv
