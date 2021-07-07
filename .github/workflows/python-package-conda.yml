@@ -21,12 +21,12 @@ jobs:
     - name: Install dependencies and setup env
       run: conda env update --file environment.yaml
         
-    - name: Activate conda env
-      run: source ${CONDA}/bin/activate umivar
-    - name: Download reference genome
+    - name: Activate conda env and run tests
       run: |
+        source ${CONDA}/bin/activate umivar
         cd Test
-        make download_reference
-    - name: Run cfDNA test (personalized)
-      run: |
-        make all
+        make unpack_reference
+        make ci
+
+        
+        
