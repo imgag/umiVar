@@ -29,3 +29,16 @@ jobs:
     - name: Run cfDNA test (personalized)
       run: |
         make all
+    
+  example-2-linux:
+    name: Ex2 Linux
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          environment-file: environment.yaml
+          activate-environment: umivar
+      - run: |
+          conda info
+          conda list
