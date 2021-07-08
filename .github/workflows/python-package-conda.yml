@@ -25,7 +25,6 @@ jobs:
       run: |
         source ${CONDA}/bin/activate umivar
         cd Test
-        make unpack_reference
         make ci
 
         

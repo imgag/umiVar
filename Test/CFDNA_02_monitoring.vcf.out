@@ -1,5 +1,5 @@
 ##fileformat=VCFv4.1
-##fileDate=07/07/2021
+##fileDate=08/07/2021
 ##source=umiVar2
 ##reference=chr7.fa
 ##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
@@ -32,4 +32,4 @@
 ##FORMAT=<ID=MAL,Number=1,Type=Float,Description="Multi-allele likelihood = Q-value (FDR) for other alternative alleles to belong to the error rate distribution (beta binomial distribution)">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CFDNA_02
 chr7	124392512	.	C	T	.	PASS	Variant_dist=49;Vicinity=CTTTACATATG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:3631:8233:0.44103:3277:2608:0.443161:0.00e+00:0.00e+00:1934-1697-2431-2170:1.00e+00:1:1.00e+00
-chr7	55259515	.	T	G	.	FDR	Variant_dist=9;Vicinity=TGGGCTGGCCA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:72:8480:0.008491:5798:45:0.007702:6.77e-05:1.09e-01:42-30-4350-4054:1.00e+00:4:1.00e+00
+chr7	55259515	.	T	G	.	PASS	Variant_dist=9;Vicinity=TGGGCTGGCCA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:72:8480:0.008491:5798:45:0.007702:5.98e-05:9.59e-02:42-30-4350-4054:1.00e+00:4:1.00e+00
