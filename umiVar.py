@@ -169,6 +169,7 @@ def main():
             subprocess.run(mpileup_command, shell=True)
         except subprocess.CalledProcessError as error:
             print(error)
+            exit(1)
 
         # Debug speed
         end_time = time.time()
