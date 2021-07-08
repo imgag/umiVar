@@ -365,7 +365,7 @@ def parse_pileup_statistics():
                         if monitoring_variants[chrom][pos][1] == ref[variant_iterator] and \
                                 monitoring_variants[chrom][pos][2] == alt[variant_iterator]:
 
-                            # Setting monitoring flag to 1 indicates that position has been printed
+                            # Setting monitoring flag to 2 indicates that position has been printed
                             monitoring_flag = 2
 
                             # Write either ID or monitoring variant
@@ -485,8 +485,10 @@ def print_vcf_header():
     # Print to verbose VCF, high quality VCF, Monitoring VCF and ID VCF files
     OUT_vcf.write(final_header)
     OUT_vcf_hq.write(final_header)
-    VCF_monitoring.write(final_header)
-    VCF_id.write(final_header)
+
+    if bool(monitoring_variants):
+        VCF_monitoring.write(final_header)
+        VCF_id.write(final_header)
 
 
 # Write column names to tsv outfile
@@ -602,7 +604,7 @@ print_tsv_header()
 parse_pileup_statistics()
 
 # Compute Minimal Residual Disease
-if args.mrd == 1:
+if args.mrd == 1 and bool(monitoring_variants):
     compute_mrd()
 
 # Close output files
