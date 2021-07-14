@@ -62,8 +62,10 @@ def split_bam(infile, outprefix, dp_count_outfile):
 def parse_config_file(config_file_path):
     if not os.path.exists(config_file_path):
         # if no settings file found use system binaries
+        print("No settings file found! Using system versions of python, R and samtools.")
         return {"python": "python3", "R": "Rscript", "samtools": "samtools"}
     config = dict()
+    print("Settings file found. Using the following binaries:")
     with open(config_file_path) as config_file:
         for line in config_file:
             # skip empty or comment lines
@@ -71,6 +73,7 @@ def parse_config_file(config_file_path):
                 continue
             parsed_line = line.split('=')
             config[parsed_line[0].strip()] = parsed_line[1].strip()
+            print("\t" + line.strip())
 
     # check mandatory settings
     mandatory = ["python", "R", "samtools"]

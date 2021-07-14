@@ -116,3 +116,13 @@ Example:
 python umiVar.py -tbam cfDNA.bam -b region.bed -r GRCh37.fa  -p beta_params.txt
 ```
 
+### Settings file
+You can also provide custom binaries for `python`, `R` and `samtools`. For that a settings file called `settings.ini`has to be created in the main directory of umiVar. If no `settings.ini`is available, umiVar uses the system-wide installed binaries.
+\
+Example content (also shown in `settings.default`):
+````
+python = [PATH_TO_PYTHON]/python3
+R = [PATH_TO_R]/RScript
+samtools = [PATH_TO_samtools]/samtools
+````
+
