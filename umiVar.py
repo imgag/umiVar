@@ -58,6 +58,28 @@ def split_bam(infile, outprefix, dp_count_outfile):
                 dp_file.write('{}\t{}\n'.format(dp, count))
 
 
+# Parse custom config file
+def parse_config_file(config_file_path):
+    if not os.path.exists(config_file_path):
+        # if no settings file found use system binaries
+        return {"python": "python3", "R": "Rscript", "samtools": "samtools"}
+    config = dict()
+    with open(config_file_path) as config_file:
+        for line in config_file:
+            # skip empty or comment lines
+            if line.startswith("#") or line.startswith("[") or (line.strip() == ""):
+                continue
+            parsed_line = line.split('=')
+            config[parsed_line[0].strip()] = parsed_line[1].strip()
+
+    # check mandatory settings
+    mandatory = ["python", "R", "samtools"]
+    for setting in mandatory:
+        if setting not in config.keys():
+            raise ValueError("Required setting '" + setting + "' not found in config file!")
+    return config
+
+
 # Main function
 def main():
     # Take time for speed check
@@ -86,25 +108,17 @@ def main():
                                  help='Fisher strand bias filter. Default [0]')
     argument_parser.add_argument('-t', '--temp_dir', default='.', help='Temporary directory')
     argument_parser.add_argument('-kt', '--keep_temp', action='store_true', help='Don\'t delete temporary directory')
-    argument_parser.add_argument('-crb', '--custom_rscript_binary', default='Rscript',
-                                 help='Path to custom Rscript binary. [Default: \'Rscript\']')
 
     # Retrieve arguments
     arguments = argument_parser.parse_args()
 
-    # Check if custom Rscript path is set and exists
-    rscript_path = arguments.custom_rscript_binary
-    if rscript_path != 'Rscript':
-        if not os.path.isfile(rscript_path):
-            raise FileNotFoundError("Given Rscript binary path '" + rscript_path + "' does not exist!")
-
     # Check if mandatory input files exist
     if not os.path.exists(arguments.tbam):
         print("Input bam file (-tbam) does not exist.")
-        exit(0)
+        exit(1)
     if not os.path.exists(arguments.ref):
         print("Reference genome fasta file (-ref) does not exist.")
-        exit(0)
+        exit(1)
 
     # Use tumor BAM filename as ID
     tumor_id = os.path.basename(os.path.splitext(arguments.tbam)[0])
@@ -114,6 +128,9 @@ def main():
 
     # Define and create output directory
     out_dir = arguments.out_folder
+
+    # binary paths
+    config = parse_config_file(os.path.join(script_directory, "settings.ini"))
 
     # No output folder specified: create folder in current working directory
     if not out_dir:
@@ -140,16 +157,17 @@ def main():
 
         # Index BAM files
         try:
-            subprocess.run("samtools index " + file, shell=True)
+            subprocess.run(config["samtools"] + " index " + file, shell=True, check=True)
         except subprocess.CalledProcessError as error:
             print(error)
+            exit(1)
 
         # Create output file names for mpileup and pileup2tsv
         f_pileup = file.replace('.bam', '.pileup')
         f_tsv = file.replace('.bam', '.tsv')
 
         # Generate pileup and transform
-        mpileup_command = 'samtools mpileup' + \
+        mpileup_command = config["samtools"] + ' mpileup' + \
                           ' -d 0 ' + \
                           ' -f ' + arguments.ref + \
                           ' -Q 1 ' + \
@@ -157,7 +175,7 @@ def main():
                           ' -o ' + f_pileup
 
         if arguments.bed != '':
-            mpileup_command = 'samtools mpileup' + \
+            mpileup_command = config["samtools"] + ' mpileup' + \
                               ' -d 0 ' + \
                               ' -f ' + arguments.ref + \
                               ' -l ' + arguments.bed + \
@@ -166,7 +184,7 @@ def main():
                               ' -o ' + f_pileup
 
         try:
-            subprocess.run(mpileup_command, shell=True)
+            subprocess.run(mpileup_command, shell=True, check=True)
         except subprocess.CalledProcessError as error:
             print(error)
             exit(1)
@@ -182,16 +200,17 @@ def main():
         os.remove(file + '.bai')
 
         # Parse pileup file and create statistics for each genomic position in tsv format
-        pileup_parser_command = ' python3 ' + script_directory + '/pileup_parser.py' + \
+        pileup_parser_command = config["python"] + " " + script_directory + '/pileup_parser.py' + \
                                 ' --pileup ' + f_pileup + \
                                 ' --outfile ' + f_tsv + \
                                 ' --minBQ ' + str(arguments.bq) + \
                                 ' --minDP 10'
 
         try:
-            subprocess.run(pileup_parser_command, shell=True)
+            subprocess.run(pileup_parser_command, shell=True, check=True)
         except subprocess.CalledProcessError as error:
             print(error)
+            exit(1)
 
         # Debug speed
         end_time = time.time()
@@ -204,7 +223,8 @@ def main():
     if arguments.param == '':
         f_params = out_dir + '/beta_binom_parameters.txt'
 
-        beta_binomial_parameters_command = rscript_path + ' ' + script_directory + '/R_scripts/beta_binomial_parameters.R' + \
+        beta_binomial_parameters_command = config["R"] + " " + \
+                                           script_directory + '/R_scripts/beta_binomial_parameters.R' + \
                                            ' -t1 ' + out_dir + '/dedup_DP1.tsv' + \
                                            ' -t2 ' + out_dir + '/dedup_DP2.tsv' + \
                                            ' -t3 ' + out_dir + '/dedup_DP3.tsv' + \
@@ -212,9 +232,10 @@ def main():
                                            ' -o ' + f_params
 
         try:
-            subprocess.run(beta_binomial_parameters_command, shell=True)
+            subprocess.run(beta_binomial_parameters_command, shell=True, check=True)
         except subprocess.CalledProcessError as error:
             print(error)
+            exit(1)
 
     # else use the given parameters for the beta-binomial distribution
     else:
@@ -227,7 +248,7 @@ def main():
     print('\n\nElapsed time calculating beta parameters: ' + str(time_taken))
 
     # Compute quality statistics for each genome position for variant calling
-    statistical_functions_command = rscript_path + ' ' + script_directory + '/R_scripts/statistical_functions.R' + \
+    statistical_functions_command = config["R"] + " " + script_directory + '/R_scripts/statistical_functions.R' + \
                                     ' -t1 ' + out_dir + '/dedup_DP1.tsv' + \
                                     ' -t2 ' + out_dir + '/dedup_DP2.tsv' + \
                                     ' -t3 ' + out_dir + '/dedup_DP3.tsv' + \
@@ -237,9 +258,10 @@ def main():
                                     ' -o ' + out_dir + '/stats.tsv'
 
     try:
-        subprocess.run(statistical_functions_command, shell=True)
+        subprocess.run(statistical_functions_command, shell=True, check=True)
     except subprocess.CalledProcessError as error:
         print(error)
+        exit(1)
 
     # Debug speed
     end_time = time.time()
@@ -252,7 +274,7 @@ def main():
 
     # Variant calling in complete ROI
     if arguments.monitoring == '':
-        variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
+        variant_caller_command = config["python"] + " " + script_directory + '/variant_caller.py' + \
                                  ' -i ' + out_dir + '/stats.tsv' + \
                                  ' -s ' + out_dir + '/dedup_DP1.tsv' + \
                                  ' -tID ' + tumor_id + \
@@ -267,7 +289,7 @@ def main():
 
     # Variant calling in complete ROI, with focus on SNVs for monitoring or IDing
     else:
-        variant_caller_command = 'python3 ' + script_directory + '/variant_caller.py' + \
+        variant_caller_command = config["python"] + " " + script_directory + '/variant_caller.py' + \
                                  ' -i ' + out_dir + '/stats.tsv' + \
                                  ' -s ' + out_dir + '/dedup_DP1.tsv' + \
                                  ' -tID ' + tumor_id + \
@@ -282,9 +304,10 @@ def main():
                                  ' -tmpdir ' + out_dir
 
     try:
-        subprocess.run(variant_caller_command, shell=True)
+        subprocess.run(variant_caller_command, shell=True, check=True)
     except subprocess.CalledProcessError as error:
         print(error)
+        exit(1)
 
     # Debug speed
     end_time = time.time()
@@ -293,7 +316,7 @@ def main():
     print('\n\nElapsed time for variant_caller.py: ' + str(time_taken) + "\n\n")
 
     # Plot error rates with R
-    plot_error_rate_command = rscript_path + ' ' + script_directory + '/R_scripts/plot_error_rates.R' + \
+    plot_error_rate_command = config["R"] + " " + script_directory + '/R_scripts/plot_error_rates.R' + \
                               ' -bc1 ' + out_dir + '/dedup_DP1.tsv' + \
                               ' -bc2 ' + out_dir + '/dedup_DP2.tsv' + \
                               ' -bc3 ' + out_dir + '/dedup_DP3.tsv' + \
@@ -301,9 +324,10 @@ def main():
                               ' -out ' + out_dir
 
     try:
-        subprocess.run(plot_error_rate_command, shell=True)
+        subprocess.run(plot_error_rate_command, shell=True, check=True)
     except subprocess.CalledProcessError as error:
         print(error)
+        exit(1)
 
     # Debug speed
     end_time = time.time()

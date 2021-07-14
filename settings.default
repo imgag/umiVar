@@ -1,0 +1,5 @@
+# example settings file
+# can be used to provide custom binaries to execute umiVar
+python = [PATH_TO_PYTHON]/python3
+R = [PATH_TO_R]/RScript
+samtools = [PATH_TO_samtools]/samtools

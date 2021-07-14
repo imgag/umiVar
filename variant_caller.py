@@ -232,7 +232,7 @@ def parse_pileup_statistics():
     with open(input_file) as f1:
         for line in f1:
 
-            monitoring_flag = 0     # check if monitoring or ID position has been successfuly printed
+            monitoring_flag = 0     # check if monitoring or ID position has been successfully printed
 
             line = line.rstrip('\n')
 
@@ -322,8 +322,13 @@ def parse_pileup_statistics():
                 if len(alt_key) > 1:
                     alt_key = 'I'
 
-                singleton_ref_depth = singleton_dp[locus_id][ref_nucleotide]
-                singleton_alt_depth = singleton_dp[locus_id][alt_key]
+                if locus_id in singleton_dp:
+                    singleton_ref_depth = singleton_dp[locus_id][ref_nucleotide]
+                    singleton_alt_depth = singleton_dp[locus_id][alt_key]
+                else:
+                    singleton_ref_depth = 0
+                    singleton_alt_depth = 0
+
                 multi_umi_ref_depth = int(ref_total) - int(singleton_ref_depth)
                 multi_umi_alt_depth = int(alt_count) - int(singleton_alt_depth)
                 try:
