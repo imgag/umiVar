@@ -32,4 +32,4 @@
 ##FORMAT=<ID=MAL,Number=1,Type=Float,Description="Multi-allele likelihood = Q-value (FDR) for other alternative alleles to belong to the error rate distribution (beta binomial distribution)">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CFDNA_01
 chr1	233448413	.	C	T	.	PASS	Variant_dist=73;Vicinity=AACTACACTCA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:3585:4945:0.724975:1021:2662:0.72278:0.00e+00:0.00e+00:1829-1756-746-612:1.00e+00:2:1.00e+00
-chr11	5709028	.	C	T	.	PASS	Variant_dist=6;Vicinity=CCAGACGAGAA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:2832:6060:0.467327:2280:1960:0.462264:5.67e-52:5.68e-49:1392-1440-1644-1584:1.00e+00:0:1.00e+00
+chr11	5709028	.	C	T	.	PASS	Variant_dist=6;Vicinity=CCAGACGAGAA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:2832:6060:0.467327:2280:1960:0.462264:0.00e+00:0.00e+00:1392-1440-1644-1584:1.00e+00:0:1.00e+00
