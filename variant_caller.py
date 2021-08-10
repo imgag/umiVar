@@ -337,7 +337,7 @@ def parse_pileup_statistics():
                     multi_umi_af = 0
 
                 # VCF Sample column
-                sample = [genotype, str(alt_count), str(dp_hq), str(allele_frequency),
+                sample = [genotype, str(dp_hq), str(alt_count),  str(allele_frequency),
                           str(multi_umi_ref_depth), str(multi_umi_alt_depth), str(round(multi_umi_af, 6)),
                           str(alt_p), str(alt_fdr), base_strand, str(fisher), str(other_alt), str(other_fdr)]
 
@@ -391,7 +391,7 @@ def parse_pileup_statistics():
 
                 # Compile VCF output
                 vcf_fields = [chrom, pos, snv_id, str(monitoring_variants[chrom][pos][1]), str(monitoring_variants[chrom][pos][2]), qual]
-                sample = ["0/0", "0", str(dp_hq), "0", str(multi_umi_ref_depth), "0", "0", "1.0", "1.0", "NA", "1.0", "0", "1.0"]
+                sample = ["0/0", str(dp_hq), "0", "0", str(multi_umi_ref_depth), "0", "0", "1.0", "1.0", "NA", "1.0", "0", "1.0"]
                 vcf_line = ['\t'.join(vcf_fields), "NA", ';'.join(info_fields), ':'.join(format_field), ':'.join(sample)]
                 vcf_line = '\t'.join(vcf_line)
 
@@ -432,7 +432,11 @@ def compute_mrd():
     sum_dp = sum(MRD_DP)
     sum_alt = sum(MRD_ALT)
     print(str(sum_dp) + "\t" + str(sum_alt) + "\n")
-    aggregated_af = float(sum_alt) / (float(sum_dp))
+    # prevent div0 error:
+    if float(sum_dp) != 0.0:
+        aggregated_af = float(sum_alt) / (float(sum_dp))
+    else:
+        aggregated_af = 0.0
 
     # Compute allele fraction of medians
     median_af = float(numpy.median(MRD_ALT)) / float(numpy.median(MRD_DP))

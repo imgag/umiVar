@@ -31,6 +31,6 @@
 ##FORMAT=<ID=OAAC,Number=1,Type=Integer,Description="Other Alternative Allele Count = count of reads showing a different alternative allele">
 ##FORMAT=<ID=MAL,Number=1,Type=Float,Description="Multi-allele likelihood = Q-value (FDR) for other alternative alleles to belong to the error rate distribution (beta binomial distribution)">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CFDNA_01
-chr1	115256530	.	G	T	.	PASS	Variant_dist=6;Vicinity=TTCTTGTCCAG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:311:12276:0.025334:6974:165:0.023112:3.05e-10:1.53e-07:272-39-9299-2663:4.21e-02:3:1.00e+00
-chr1	160786670	.	A	G	.	PASS	Variant_dist=45530001;Vicinity=TCTCTATTTAC	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:1277:5551:0.230049:3038:927:0.233796:1.76e-39:1.77e-36:648-629-2121-2146:1.00e+00:7:1.00e+00
-chr1	47395874	.	A	C	.	FDR	Variant_dist=27;Vicinity=CGTGCAATGGG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:11:6730:0.001634:4749:8:0.001682:1.69e-03:2.61e-01:2-9-3370-3346:1.00e+00:3:1.00e+00
+chr1	115256530	.	G	T	.	PASS	Variant_dist=6;Vicinity=TTCTTGTCCAG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:12276:311:0.025334:6974:165:0.023112:3.05e-10:1.53e-07:272-39-9299-2663:4.21e-02:3:1.00e+00
+chr1	160786670	.	A	G	.	PASS	Variant_dist=45530001;Vicinity=TCTCTATTTAC	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:5551:1277:0.230049:3038:927:0.233796:1.76e-39:1.77e-36:648-629-2121-2146:1.00e+00:7:1.00e+00
+chr1	47395874	.	A	C	.	FDR	Variant_dist=27;Vicinity=CGTGCAATGGG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	./.:6730:11:0.001634:4749:8:0.001682:1.69e-03:2.61e-01:2-9-3370-3346:1.00e+00:3:1.00e+00
