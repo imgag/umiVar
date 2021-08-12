@@ -436,7 +436,8 @@ def compute_mrd():
     if float(sum_dp) != 0.0:
         aggregated_af = float(sum_alt) / (float(sum_dp))
     else:
-        aggregated_af = 0.0
+        print("Warning: Monitoring variants don't contain any reads!")
+        aggregated_af = -1.0
 
     # Compute allele fraction of medians
     median_af = float(numpy.median(MRD_ALT)) / float(numpy.median(MRD_DP))
