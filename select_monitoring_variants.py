@@ -105,7 +105,7 @@ class MonitoringVariant:
         gzip_magic_number = "1f8b"
         fh_vcf_in = open(self.input_vcf_file)
 
-        if fh_vcf_in.read(2).encode("hex") == gzip_magic_number:
+        if fh_vcf_in.read(2).encode("utf-8").hex() == gzip_magic_number:
             fh_vcf_in = gzip.open(self.input_vcf_file)
         else:
             fh_vcf_in = open(self.input_vcf_file)
