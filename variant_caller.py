@@ -375,11 +375,11 @@ def parse_pileup_statistics():
 
                             # Write either ID or monitoring variant
                             if monitoring_variants[chrom][pos][0] == 'ID':
-                                TSV_id.write(tsv_line + '\n')
-                                VCF_id.write(vcf_line + '\n')
+                                TSV_id_buffer.append(tsv_line)
+                                VCF_id_buffer.append(vcf_line)
                             elif monitoring_variants[chrom][pos][0] == 'M':
-                                TSV_monitoring.write(tsv_line + '\n')
-                                VCF_monitoring.write(vcf_line + '\n')
+                                TSV_monitoring_buffer.append(tsv_line)
+                                VCF_monitoring_buffer.append(vcf_line)
 
                                 # Store p-val for MRD calculation
                                 MRD_P.append(float(alt_p))
@@ -403,11 +403,11 @@ def parse_pileup_statistics():
 
                 # Print monitoring positions that are homozygous reference
                 if monitoring_variants[chrom][pos][0] == 'ID':
-                    TSV_id.write(tsv_line + '\n')
-                    VCF_id.write(vcf_line + '\n')
+                    TSV_id_buffer.append(tsv_line)
+                    VCF_id_buffer.append(vcf_line)
                 elif monitoring_variants[chrom][pos][0] == 'M':
-                    TSV_monitoring.write(tsv_line + '\n')
-                    VCF_monitoring.write(vcf_line + '\n')
+                    TSV_monitoring_buffer.append(tsv_line)
+                    VCF_monitoring_buffer.append(vcf_line)
                     MRD_P.append(1.0)
                     MRD_DP.append(int(ref_total))
                     MRD_ALT.append(0)
@@ -471,6 +471,7 @@ def print_vcf_header():
 ##FILTER=<ID=Fisher_Strand,Description="Strand bias based on fisher test">
 ##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
 ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
+##FILTER=<ID=No_Coverage,Description="No read coverage for this monitoring/ID variant in BAM file.">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts">
@@ -514,7 +515,26 @@ def print_tsv_header():
         TSV_id.write(tsv_header)
 
 
+# Helper to add missing (e.g. monitor/ID) variants to VCF/TSV file buffer based on prefix match
+def add_missing_variant(buffer, prefix, type) -> list:
+    match_found = False
+    for detected_var in buffer:
+        if detected_var.startswith(prefix):
+            match_found = True
+            break
+    if not match_found:
+        # add not detected variant
+        if type == 'vcf':
+            buffer.append(prefix + "\t.\tNo_Coverage\tVicinity=.\tGT:AC:DP:AF:Strand:Pval:M_REF:M_AC:M_AF\t./.:0:0:0.0:0-0-0-0:1.0:0:0:0.0")
+        elif type == 'tsv':
+            buffer.append(prefix + "\t" + "\t".join(7 * ["0"] + ["1", "1", "NA", "1", "0", "1", "", "0", "No_Coverage"]))
+        else:
+            raise ValueError("Invalid type '" + type + "' provided for add_missing_variant!")
+    return buffer
+
+
 # Main method ---------------------------------------------------------------------------------------------
+
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Getting barcodes in fastq file and labels')
@@ -559,7 +579,7 @@ if monitoring_tsv != '' and os.path.exists(monitoring_tsv):
         for current_line in fm:
 
             # Skip header lines in VCF files
-            if current_line.startswith('##') or current_line.startswith('CHROM'):
+            if current_line.startswith('#') or current_line.startswith('CHROM'):
                 continue
 
             # extract fields of entry
@@ -606,12 +626,50 @@ if bool(monitoring_variants):
     VCF_monitoring = open(monitoring_vcf, 'w')
     VCF_id = open(id_vcf, 'w')
 
+    # Create buffer for output monitoring/ID files
+    TSV_monitoring_buffer = []
+    TSV_id_buffer = []
+    VCF_monitoring_buffer = []
+    VCF_id_buffer = []
+
 # Print output headers and column names
 print_vcf_header()
 print_tsv_header()
 
 # Parse the input file:
 parse_pileup_statistics()
+
+# Add missing monitoring/ID variants
+if bool(monitoring_variants):
+    for chr in monitoring_variants.keys():
+        for pos in monitoring_variants[chr].keys():
+            variant_descriptors = monitoring_variants[chr][pos]
+
+            # generate line prefix for VCF/TSV files
+            tsv_prefix = "\t".join([chr, pos, variant_descriptors[1], variant_descriptors[2]])
+            vcf_prefix = "\t".join([chr, pos, ".", variant_descriptors[1], variant_descriptors[2]])
+            if variant_descriptors[0] == 'M':
+                # check monitoring files:
+                TSV_monitoring_buffer = add_missing_variant(TSV_monitoring_buffer, tsv_prefix, "tsv")
+                VCF_monitoring_buffer = add_missing_variant(VCF_monitoring_buffer, vcf_prefix, "vcf")
+            elif variant_descriptors[0] == 'ID':
+                # check ID files:
+                TSV_id_buffer = add_missing_variant(TSV_id_buffer, tsv_prefix, "tsv")
+                VCF_id_buffer = add_missing_variant(VCF_id_buffer, vcf_prefix, "vcf")
+
+    # sort files
+    TSV_monitoring_buffer = sorted(TSV_monitoring_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
+    VCF_monitoring_buffer = sorted(VCF_monitoring_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
+    TSV_id_buffer = sorted(TSV_id_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
+    VCF_id_buffer = sorted(VCF_id_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
+
+# write monitoring/ID files
+if bool(monitoring_variants):
+    TSV_monitoring.write('\n'.join(TSV_monitoring_buffer) + "\n")
+    TSV_id.write('\n'.join(TSV_id_buffer) + "\n")
+    VCF_monitoring.write('\n'.join(VCF_monitoring_buffer) + "\n")
+    VCF_id.write('\n'.join(VCF_id_buffer) + "\n")
+
 
 # Compute Minimal Residual Disease
 if args.mrd == 1 and bool(monitoring_variants):
@@ -624,6 +682,8 @@ OUT_vcf_hq.close()
 OUT_tsv_hq.close()
 if bool(monitoring_variants):
     TSV_monitoring.close()
+    VCF_monitoring.close()
     TSV_id.close()
+    VCF_id.close()
 
 exit(0)

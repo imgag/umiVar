@@ -1,5 +1,5 @@
 ##fileformat=VCFv4.1
-##fileDate=08/07/2021
+##fileDate=14/04/2022
 ##source=umiVar2
 ##reference=GRCh37.fa
 ##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
@@ -17,6 +17,7 @@
 ##FILTER=<ID=Fisher_Strand,Description="Strand bias based on fisher test">
 ##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
 ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
+##FILTER=<ID=No_Coverage,Description="No read coverage for this monitoring/ID variant in BAM file.">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts">

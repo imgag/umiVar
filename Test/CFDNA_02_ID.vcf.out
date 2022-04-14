@@ -1,5 +1,5 @@
 ##fileformat=VCFv4.1
-##fileDate=14/07/2021
+##fileDate=14/04/2022
 ##source=umiVar2
 ##reference=chr7.fa
 ##INFO=<ID=Variant_Dist,Number=1,Type=Integer,Description="Distance to the closest short variant">
@@ -17,6 +17,7 @@
 ##FILTER=<ID=Fisher_Strand,Description="Strand bias based on fisher test">
 ##FILTER=<ID=Low_qual_pos,Description="Position enriched with too many low quality bases">
 ##FILTER=<ID=Variant_contamination,Description="Reads supporting other alleles outside of the error rate distribution">
+##FILTER=<ID=No_Coverage,Description="No read coverage for this monitoring/ID variant in BAM file.">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=AC,Number=.,Type=Integer,Description="Allele read counts">
@@ -33,3 +34,4 @@
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CFDNA_02
 chr7	137029838	.	T	C	.	PASS	Variant_dist=24;Vicinity=ACTTCTGTGTG	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:12040:5055:0.41985:4525:3318:0.423052:0.00e+00:0.00e+00:2947-2108-4110-2871:1.00e+00:4:1.00e+00
 chr7	140453136	.	A	T	.	PASS	Variant_dist=13;Vicinity=ATTTCACTGTA	GT:DP:AC:AF:M_REF:M_AC:M_AF:Pval:FDR:Strand:FS:OAAC:MAL	0/1:8966:2841:0.316864:4320:1974:0.313632:0.00e+00:0.00e+00:1313-1528-3059-3065:1.00e+00:1:1.00e+00
+chr7	155029838	.	C	T	.	No_Coverage	Vicinity=.	GT:AC:DP:AF:Strand:Pval:M_REF:M_AC:M_AF	./.:0:0:0.0:0-0-0-0:1.0:0:0:0.0
