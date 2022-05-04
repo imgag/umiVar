@@ -533,6 +533,15 @@ def add_missing_variant(buffer, prefix, type) -> list:
     return buffer
 
 
+# read chromosome order from reference FASTA index file
+def read_chromosome_order(fasta_index_file_path) -> list:
+    chromosome_order = []
+    with open (fasta_index_file_path, 'r') as file:
+        for line in file:
+            chromosome_order.append(line.split('\t')[0].strip())
+    return chromosome_order
+
+
 # Main method ---------------------------------------------------------------------------------------------
 
 
@@ -657,11 +666,13 @@ if bool(monitoring_variants):
                 TSV_id_buffer = add_missing_variant(TSV_id_buffer, tsv_prefix, "tsv")
                 VCF_id_buffer = add_missing_variant(VCF_id_buffer, vcf_prefix, "vcf")
 
+    # load chr order
+    chromosome_order = read_chromosome_order(reference_file + ".fai")
     # sort files
-    TSV_monitoring_buffer = sorted(TSV_monitoring_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
-    VCF_monitoring_buffer = sorted(VCF_monitoring_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
-    TSV_id_buffer = sorted(TSV_id_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
-    VCF_id_buffer = sorted(VCF_id_buffer, key=lambda x: (x.split('\t')[0], int(x.split('\t')[1])))
+    TSV_monitoring_buffer = sorted(TSV_monitoring_buffer, key=lambda x: (chromosome_order.index(x.split('\t')[0]), int(x.split('\t')[1])))
+    VCF_monitoring_buffer = sorted(VCF_monitoring_buffer, key=lambda x: (chromosome_order.index(x.split('\t')[0]), int(x.split('\t')[1])))
+    TSV_id_buffer = sorted(TSV_id_buffer, key=lambda x: (chromosome_order.index(x.split('\t')[0]), int(x.split('\t')[1])))
+    VCF_id_buffer = sorted(VCF_id_buffer, key=lambda x: (chromosome_order.index(x.split('\t')[0]), int(x.split('\t')[1])))
 
 # write monitoring/ID files
 if bool(monitoring_variants):
