@@ -9,7 +9,7 @@ import gzip
 class MonitoringVariant:
 
     # Constructor
-    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af):
+    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels):
 
         # Input files and output folder
         self.input_vcf_file = input_vcf_file
@@ -20,6 +20,7 @@ class MonitoringVariant:
         self.min_depth = min_depth
         self.min_alt = min_alt
         self.min_af = min_af
+        self.no_indels = no_indels
 
         # Dictionaries storing information from input files
         self.gsv_gene = dict()
@@ -152,6 +153,10 @@ class MonitoringVariant:
                 is_indel = 0
                 if len(vcf_column[3]) > 1 or len(vcf_column[4]) > 1:
                     is_indel = 1
+
+                # Skip INDELS
+                if is_indel == 1 and self.no_indels:
+                    continue
 
                 # Get depth of coverage for tumor and normal sample
                 normal_dp = int(normal_table['DP'])
@@ -347,6 +352,7 @@ def main():
     parser.add_argument('-a', '--min_alt', type=int, default=5, help='Minimum alternative base count of variant')
     parser.add_argument('-f', '--min_af', type=float, default=0.1,
                         help='Minimum alternative allele frequency of variant')
+    parser.add_argument('-i', '--no_indels', action='store_true', help='Do not select INDELS as monitoring variants')
 
     try:
         args = parser.parse_args()
@@ -361,6 +367,7 @@ def main():
     min_depth = args.min_depth
     min_alt = args.min_alt
     min_af = args.min_af
+    no_indels = args.no_indels
 
     # Create output folder
     # No output folder specified: create folder in current working directory
@@ -391,7 +398,7 @@ def main():
         # exit(0)
 
     # Instantiate MonitoringVariant object and run the variant evaluation
-    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af)
+    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels)
     evaluator.read_gsv()
     evaluator.evaluate_variants(input_ref_file)
 
