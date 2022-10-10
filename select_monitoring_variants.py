@@ -9,7 +9,7 @@ import gzip
 class MonitoringVariant:
 
     # Constructor
-    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels):
+    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels, num_var):
 
         # Input files and output folder
         self.input_vcf_file = input_vcf_file
@@ -21,6 +21,7 @@ class MonitoringVariant:
         self.min_alt = min_alt
         self.min_af = min_af
         self.no_indels = no_indels
+        self.num_var = num_var
 
         # Dictionaries storing information from input files
         self.gsv_gene = dict()
@@ -261,6 +262,13 @@ class MonitoringVariant:
                 if base_bias >= 0.8:
                     score -= 1
 
+                # add score to VCF info column
+                if vcf_column[7].strip() == "" or vcf_column[7].strip() == ".":
+                    vcf_column[7] = "MonitoringScore=" + str(round(score, 3))
+                else:
+                    vcf_column[7] += ";MonitoringScore=" + str(round(score, 3))
+                vcf_line = "\t".join(vcf_column)
+
                 # Store info for high quality mutations (on-target and off-target separately)
                 candidate = str(vcf_column[0]) + "\t" + str(vcf_column[1]) + "\t" + str(vcf_column[3]) + "\t" \
                             + str(vcf_column[4]) + "\t" + str(tumor_dp) + "\t" + str(ref_t1) + "\t" \
@@ -281,7 +289,7 @@ class MonitoringVariant:
             fh_rnk.write(key + "\n")
 
             # Print 30 SNPs for monitoring
-            if counter < 30:
+            if counter < self.num_var:
                 fh_tsv.write(key + "\n")
                 fh_vcf.write(self.scoring_VCF[key] + "\n")
                 columns = key.split("\t")
@@ -294,7 +302,7 @@ class MonitoringVariant:
             fh_rnk.write(key + "\n")
 
             # Fill-up 30 SNPs for monitoring
-            if counter < 30:
+            if counter < self.num_var:
                 fh_tsv.write(key + "\n")
                 fh_vcf.write(self.off_target_VCF[key] + "\n")
                 columns = key.split("\t")
@@ -353,6 +361,7 @@ def main():
     parser.add_argument('-f', '--min_af', type=float, default=0.1,
                         help='Minimum alternative allele frequency of variant')
     parser.add_argument('-i', '--no_indels', action='store_true', help='Do not select INDELS as monitoring variants')
+    parser.add_argument('-n', '--num_var', type=int, default=30, help='Number of monitoring variants which will be selected')
 
     try:
         args = parser.parse_args()
@@ -368,6 +377,7 @@ def main():
     min_alt = args.min_alt
     min_af = args.min_af
     no_indels = args.no_indels
+    num_var = args.num_var
 
     # Create output folder
     # No output folder specified: create folder in current working directory
@@ -398,7 +408,7 @@ def main():
         # exit(0)
 
     # Instantiate MonitoringVariant object and run the variant evaluation
-    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels)
+    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels, num_var)
     evaluator.read_gsv()
     evaluator.evaluate_variants(input_ref_file)
 

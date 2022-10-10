@@ -63,7 +63,7 @@ check_select_monitoring_01:
 	
 run_select_monitoring_02:
 	# ignore INDELs
-	python3 ../select_monitoring_variants.py -g selectMonitoring.GSvar -v selectMonitoring.vcf -r chr10.fa -o selectMonitoring02 -i
+	python3 ../select_monitoring_variants.py -g selectMonitoring.GSvar -v selectMonitoring.vcf -r chr10.fa -o selectMonitoring02 -i -n 50
 
 check_select_monitoring_02:
 	diff -u selectMonitoring_monitoring_02.tsv.out selectMonitoring02/monitoring.tsv
