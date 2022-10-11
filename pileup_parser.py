@@ -348,6 +348,10 @@ def pileup_info(line, min_bq):
     deletion = [change, str(del_count), str(del_count_fwd), str(del_count_rev), '.', str(diff)]
     deletion = '\t'.join(deletion)
 
+    # Bugfix: do not allow the ref count be below zero:
+    ref_count_fwd = max(0, ref_count_fwd)
+    ref_count_rev = max(0, ref_count_rev)
+
     # Final result
     line = [str(locus), str(pos), str(ref_base), str(cov), str(dp_hq), str(ref_count_fwd), str(ref_count_rev),
             a, c, t, g, insertion, deletion, str(mm_count_lq), str(n_count)]

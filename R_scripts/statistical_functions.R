@@ -374,7 +374,7 @@ CALL <- function(LINE, INDEL, num_sites, Ps){
       ALT_COUNT_all <- as.numeric(LINE[ALL_ALT_COUNT]) # All allele counts
       ALT_COUNT_padj <- formatC(as.numeric(P_ADJ[i]), format = "e", digits = 2)
       ALT_COUNT_p <- formatC(as.numeric(Ps[i]), format = "e", digits = 2)
-      
+
       # Fisher strand values values
       FISHER <- (fisher.test(matrix(c(FORWARD, REVERSE, REFf, REFr), nrow = 2))[[1]])
       FISHER_adj <- formatC(p.adjust(FISHER, n = num_sites, method = 'fdr'), format = "e", digits = 2)
