@@ -1,10 +1,10 @@
-all: clean CFDNA_01 CFDNA_02
+all: clean CFDNA_01 CFDNA_02 select_monitoring
 
 ##Test case for CI
 ci: clean download_test_reference CFDNA_02 select_monitoring
 
 clean:
-	rm -rf umiVar_CFDNA_01 umiVar_CFDNA_02 select_monitoring_01 select_monitoring_02
+	rm -rf umiVar_CFDNA_01 umiVar_CFDNA_02 select_monitoring_01 select_monitoring_02 select_monitoring_03
 
 download_reference:
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
@@ -52,7 +52,7 @@ check_CFDNA_02:
 	diff -u CFDNA_02.mrd.out umiVar_CFDNA_02/CFDNA_02.mrd
 
 
-select_monitoring: run_select_monitoring_01 run_select_monitoring_02 check_select_monitoring_01 check_select_monitoring_02
+select_monitoring: run_select_monitoring_01 run_select_monitoring_02 run_select_monitoring_03 check_select_monitoring_01 check_select_monitoring_02 check_select_monitoring_03
 
 run_select_monitoring_01:
 	python3 ../select_monitoring_variants.py -g selectMonitoring.GSvar -v selectMonitoring.vcf -r chr10.fa -o selectMonitoring01
@@ -69,4 +69,12 @@ check_select_monitoring_02:
 	diff -u selectMonitoring_monitoring_02.tsv.out selectMonitoring02/monitoring.tsv
 	diff -u selectMonitoring_ranked_02.tsv.out selectMonitoring02/ranked.tsv
 	
+
+run_select_monitoring_03:
+	# ignore INDELs and off-target
+	python3 ../select_monitoring_variants.py -g selectMonitoring.GSvar -v selectMonitoring.vcf -r chr10.fa -o selectMonitoring03 -i -t -n 50
+
+check_select_monitoring_03:
+	diff -u selectMonitoring_monitoring_03.tsv.out selectMonitoring03/monitoring.tsv
+	diff -u selectMonitoring_ranked_03.tsv.out selectMonitoring03/ranked.tsv
 

@@ -9,7 +9,7 @@ import gzip
 class MonitoringVariant:
 
     # Constructor
-    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels, num_var):
+    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels, num_var, no_off_target):
 
         # Input files and output folder
         self.input_vcf_file = input_vcf_file
@@ -22,6 +22,7 @@ class MonitoringVariant:
         self.min_af = min_af
         self.no_indels = no_indels
         self.num_var = num_var
+        self.no_off_target = no_off_target
 
         # Dictionaries storing information from input files
         self.gsv_gene = dict()
@@ -245,14 +246,14 @@ class MonitoringVariant:
                 if locus_gsv in self.gsv_score:  # Driverness and role in oncogenesis
                     score += self.gsv_score[locus_gsv]
 
-                # Melanoma super-genes NRAS, KRAS, BRAF, NF1, TERT, CDKN2A, TP53 (replace by white-list file)
-                if gene == "NRAS" or gene == "KRAS" or gene == "BRAF" or gene == "NF1" \
-                        or gene == "TERT" or gene == "CDKN2A" or gene == "TP53":
-                    score += 1
-
-                if gene == "TERT":
-                    if vcf_column[1] == 1295373 or vcf_column[1] == 1295250 or "12952" in vcf_column[1]:
-                        score += 2
+                # # Melanoma super-genes NRAS, KRAS, BRAF, NF1, TERT, CDKN2A, TP53 (replace by white-list file)
+                # if gene == "NRAS" or gene == "KRAS" or gene == "BRAF" or gene == "NF1" \
+                #         or gene == "TERT" or gene == "CDKN2A" or gene == "TP53":
+                #     score += 1
+                #
+                # if gene == "TERT":
+                #     if vcf_column[1] == 1295373 or vcf_column[1] == 1295250 or "12952" in vcf_column[1]:
+                #         score += 2
 
                 # Penalize low-complexity and homopolymer regions
                 if hom_len >= 5:
@@ -298,18 +299,20 @@ class MonitoringVariant:
                 fh_bed.write(columns[0] + "\t" + str(start) + "\t" + str(end) + "\n")
                 counter += 1
 
-        for key in sorted(self.off_target_TSV, key=self.off_target_TSV.get, reverse=True):
-            fh_rnk.write(key + "\n")
+        if not self.no_off_target:
+            # add off-target reads to fill-up list
+            for key in sorted(self.off_target_TSV, key=self.off_target_TSV.get, reverse=True):
+                fh_rnk.write(key + "\n")
 
-            # Fill-up 30 SNPs for monitoring
-            if counter < self.num_var:
-                fh_tsv.write(key + "\n")
-                fh_vcf.write(self.off_target_VCF[key] + "\n")
-                columns = key.split("\t")
-                start = int(columns[1]) - 1
-                end = int(columns[1])
-                fh_bed.write(columns[0] + "\t" + str(start) + "\t" + str(end) + "\n")
-                counter += 1
+                # Fill-up 30 SNPs for monitoring
+                if counter < self.num_var:
+                    fh_tsv.write(key + "\n")
+                    fh_vcf.write(self.off_target_VCF[key] + "\n")
+                    columns = key.split("\t")
+                    start = int(columns[1]) - 1
+                    end = int(columns[1])
+                    fh_bed.write(columns[0] + "\t" + str(start) + "\t" + str(end) + "\n")
+                    counter += 1
 
         # Close output files
         fh_bed.close()
@@ -354,14 +357,14 @@ def main():
     parser = argparse.ArgumentParser(description='Select variants for monitoring cancer treatment via liquid biopsy')
     parser.add_argument('-v', '--vcf', type=str, required=True, help='VCF file with all variants of a patient')
     parser.add_argument('-g', '--gsv', type=str, required=True, help='GSvar file with all variants of a patient')
-    parser.add_argument('-r', '--ref', type=str, required=True, help='Reference genome file, e.g. GRCh37.fasta')
+    parser.add_argument('-r', '--ref', type=str, required=True, help='Reference genome file, e.g. GRCh38.fasta')
     parser.add_argument('-o', '--out', type=str, default='', help='Output directory. Must not exist.')
-    parser.add_argument('-d', '--min_depth', type=int, default=50, help='Minimum depth at variant site')
-    parser.add_argument('-a', '--min_alt', type=int, default=5, help='Minimum alternative base count of variant')
-    parser.add_argument('-f', '--min_af', type=float, default=0.1,
-                        help='Minimum alternative allele frequency of variant')
-    parser.add_argument('-i', '--no_indels', action='store_true', help='Do not select INDELS as monitoring variants')
-    parser.add_argument('-n', '--num_var', type=int, default=30, help='Number of monitoring variants which will be selected')
+    parser.add_argument('-d', '--min_depth', type=int, default=50, help='Minimum depth at variant site.')
+    parser.add_argument('-a', '--min_alt', type=int, default=5, help='Minimum alternative base count of variant.')
+    parser.add_argument('-f', '--min_af', type=float, default=0.1, help='Minimum alternative allele frequency of variant.')
+    parser.add_argument('-i', '--no_indels', action='store_true', help='Do not select INDELS as monitoring variants.')
+    parser.add_argument('-n', '--num_var', type=int, default=30, help='Number of monitoring variants which will be selected.')
+    parser.add_argument('-t', '--no_off_target', action='store_true', help='Do not fill-up list with off-target variants.')
 
     try:
         args = parser.parse_args()
@@ -378,6 +381,7 @@ def main():
     min_af = args.min_af
     no_indels = args.no_indels
     num_var = args.num_var
+    no_off_target = args.no_off_target
 
     # Create output folder
     # No output folder specified: create folder in current working directory
@@ -408,7 +412,7 @@ def main():
         # exit(0)
 
     # Instantiate MonitoringVariant object and run the variant evaluation
-    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels, num_var)
+    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels, num_var, no_off_target)
     evaluator.read_gsv()
     evaluator.evaluate_variants(input_ref_file)
 
