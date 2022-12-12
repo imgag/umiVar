@@ -1,0 +1,90 @@
+##FILTER=lt-3-reads=Less than 3 supporting tumor reads
+##FILTER=off-target=Variant marked as 'off-target'.
+##FILTER=special-chromosome=Special chromosome
+##DESCRIPTION=filter=Annotations for filtering and ranking variants.
+##DESCRIPTION=quality=Quality parameters - variant quality (QUAL), depth (DP), allele frequency (AF), mean mapping quality of alternate allele (MQM), probability of strand bias for alternate bases as phred score (SAP), probability of allele ballance as phred score (ABP)
+##DESCRIPTION=gene=Affected gene list (comma-separated).
+##DESCRIPTION=variant_type=Variant type.
+##DESCRIPTION=coding_and_splicing=Coding and splicing details (Gene, ENST number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=coding_and_splicing_refseq=Coding and splicing details based on RefSeq (Gene, RefSeq id, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=regulatory=Regulatory consequence details.
+##DESCRIPTION=OMIM=OMIM database annotation.
+##DESCRIPTION=ClinVar=ClinVar database annotation.
+##DESCRIPTION=HGMD=HGMD database annotation.
+##DESCRIPTION=RepeatMasker=RepeatMasker annotation.
+##DESCRIPTION=dbSNP=Identifier in dbSNP database.
+##DESCRIPTION=1000g=Allele frequency in 1000 genomes project.
+##DESCRIPTION=gnomAD=Allele frequency in gnomAD project.
+##DESCRIPTION=gnomAD_hom_hemi=Homoyzgous counts and hemizygous counts of gnomAD project (genome data).
+##DESCRIPTION=gnomAD_sub=Sub-population allele frequenciens (AFR,AMR,EAS,NFE,SAS) in gnomAD project.
+##DESCRIPTION=phyloP=phyloP (100way vertebrate) annotation. Deleterious threshold > 1.6.
+##DESCRIPTION=Sift=Sift effect prediction and score for each transcript: D=damaging, T=tolerated.
+##DESCRIPTION=PolyPhen=PolyPhen (humVar) effect prediction and score for each transcript: D=probably damaging, P=possibly damaging, B=benign.
+##DESCRIPTION=CADD=CADD pathogenicity prediction scores (scaled phred-like). Deleterious threshold > 10-20.
+##DESCRIPTION=REVEL=REVEL pathogenicity prediction score. Deleterious threshold > 0.5.
+##DESCRIPTION=MaxEntScan=MaxEntScan splicing prediction (reference bases score/alternate bases score).
+##DESCRIPTION=dbscSNV=dbscSNV splicing prediction (ADA/RF score).
+##DESCRIPTION=COSMIC=COSMIC somatic variant database anntotation.
+##DESCRIPTION=MMSplice_DeltaLogitPSI=MMsplice delta Logit PSI score: variant's effect on the exon inclusion - positive score shows higher exon inclusion, negative higher exclusion rate. A score greater than 2 or less than -2 can be considered strong.
+##DESCRIPTION=MMSplice_pathogenicity=MMsplice pathogenicity score: probability of pathogenic effect of the variant on splicing
+##DESCRIPTION=SpliceAI=SpliceAI prediction of splice-site variations. Probability of the variant being splice-altering (range from 0-1). The score is the maximum value of acceptor/donor gain/loss of all effected genes.
+##DESCRIPTION=NGSD_som_c=Somatic variant count in the NGSD.
+##DESCRIPTION=NGSD_som_p=Project names of project containing this somatic variant in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_interpretation=Somatic variant interpretation according VICC standard in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_comment=Somatic VICC interpretation comment in the NGSD.
+##DESCRIPTION=NGSD_hom=Homozygous variant count in NGSD.
+##DESCRIPTION=NGSD_het=Heterozygous variant count in NGSD.
+##DESCRIPTION=NGSD_group=Homozygous / heterozygous variant count in NGSD with the same disease group.
+##DESCRIPTION=classification=Classification from the NGSD.
+##DESCRIPTION=classification_comment=Classification comment from the NGSD.
+##DESCRIPTION=validation=Validation information from the NGSD. Validation results of other samples are listed in brackets!
+##DESCRIPTION=comment=Variant comments from the NGSD.
+##DESCRIPTION=gene_info=Gene information from NGSD (inheritance mode, gnomAD o/e scores).
+##FILTER=low_conf_region=Low confidence region for small variant calling based on gnomAD AC0/RF filters and IMGAG trio/twin data.
+##DESCRIPTION=tumor_af=Mutant allele frequency in tumor (Sample NA12877N1287805_01).
+##DESCRIPTION=tumor_dp=Tumor Depth (Sample NA12877N1287805_01).
+##DESCRIPTION=normal_af=Mutant allele frequency in normal (Sample NA12877_07).
+##DESCRIPTION=normal_dp=Normal depth (Sample NA12877_07).
+##DESCRIPTION=somatic_classification_comment=Somatic classification comment from the NGSD.
+##DESCRIPTION=somatic_classification=Somatic classification from the NGSD.
+##DESCRIPTION=ncg_oncogene=1:gene is oncogene according NCG6.0, 0:No oncogene according NCG6.0, na: no information available about gene in NCG6.0. Order is the same as in column gene.
+##DESCRIPTION=ncg_tsg=1:gene is TSG according NCG6.0, 0:No TSG according NCG6.0, na: no information available about gene in NCG6.0. Order is the same as in column gene.
+#chr	start	end	ref	obs	tumor_af	tumor_dp	normal_af	normal_dp	filter	quality	gnomAD	gene	variant_type	NGSD_hom	NGSD_het
+chr1	752894	752894	G	A	0.0382	655	0	406	freq-tum	QUAL=143	0.54	TNFRSF14	missense	n/a (AF>5%)	n/a (AF>5%)
+chr1	762273	762273	G	A	0.0678	59	0	30		QUAL=52		CHD5	intron	n/a (AF>5%)	n/a (AF>5%)
+chr1	762589	762589	G	A	0.0822	146	0	92		QUAL=80		CHD5	synonymous	n/a (AF>5%)	n/a (AF>5%)
+chr1	762592	762592	C	T	0.0388	1032	0	653	freq-tum	QUAL=198		CAMTA1	intron	n/a (AF>5%)	n/a (AF>5%)
+chr1	762601	762601	G	A	0.0789	121	0	48		QUAL=49	0.0001	PIK3CD	intron	0	2
+chr1	792263	792263	A	T	0.1068	443	0	268		QUAL=161		PIK3CD	intron	0	0
+chr1	792480	792480	G	A	0.0735	585	0	332		QUAL=131	0.0001	PIK3CD	intron	2	40
+chr1	866319	866319	C	T	0.0727	55	0	39	off-target	QUAL=53	0.0024	PIK3CD	intron	0	0
+chr1	866511	866511	C	T	0.0303	530	0	338	freq-tum;off-target	QUAL=128	0.0028	MAD2L2	intron	0	0
+chr1	871334	871334	G	A	0.0358	364	0	201		QUAL=98		MTHFR	intron	1	0
+chr1	876499	876499	C	T	0.0292	823	0	520		QUAL=140		MTHFR	intron	1	0
+chr1	877715	877715	C	T	0.0273	1138	0	653		QUAL=198	0.0001	MTHFR	missense	0	1
+chr1	877831	877831	G	A	0.0456	482	0	262	freq-tum;off-target	QUAL=111	0.256	MTHFR	intron	0	11
+chr1	879676	879676	G	A	0.0332	1143	0	642	freq-tum	QUAL=187	0.0001	MTHFR	synonymous	0	0
+chr1	879687	879687	C	T	0.0439	114	0	79		QUAL=65		MTHFR	intron	0	0
+chr1	880238	880238	C	T	0.0482	83	0	48		QUAL=45	0.25	MTHFR	intron	1	14
+chr1	881627	881627	G	A	0.0321	1217	0	741	freq-tum	QUAL=189		MTHFR	synonymous	0	2
+chr1	883625	883625	G	A	0.2174	91	0.0278	49	LowEVS;off-target	QUAL=29	0.0001	SPEN	intron	0	1
+chr1	883899	883899	C	T	0.0358	614	0	351	freq-tum;off-target	QUAL=131		SPEN	intron	0	0
+chr1	889158	889158	C	T	0.052	341	0	178	LowEVS;off-target	QUAL=90	0.001	EPHB2	intron	0	0
+chr1	889159	889159	T	G	0.0387	517	0	271	freq-tum	QUAL=113		EPHB2	synonymous	0	0
+chr1	892745	892745	G	A	0.0722	98	0	50	off-target	QUAL=67	0.0001	EPHB2	intron	0	3
+chr1	894573	894573	C	T	0.0276	688	0	400	freq-tum;off-target	QUAL=113		SDC3	5'UTR,synonymous	0	0
+chr1	897325	897325	C	T	0.0347	925	0	560	freq-tum;off-target	QUAL=178		UROD	intron	0	6
+chr1	45014037	45014037	A	G	0.0407	1428	0	796	freq-tum	QUAL=230	0.052	UROD	synonymous	0	0
+chr1	45331833	45331833	C	G	0.0386	570	0	297	freq-tum	QUAL=119	0.054	MUTYH,	missense,intron,missense&NMD_transcript	1	18
+chr1	45338378	45338378	C	T	0.0262	573	0	320	freq-tum;off-target	QUAL=124		MUTYH,	intron,intron&NMD_transcript	0	7
+chr1	46176155	46176155	A	G	0.08	300	0	154	LowEVS;off-target	QUAL=95	0.0001	TSPAN1,P3R3URF,P3R3URF-PIK3R3	intron	0	0
+chr1	50970274	50970274	C	T	0.0412	291	0	159	freq-tum;off-target	QUAL=88		CDKN2C	intron,5'UTR	0	69
+chr1	63323417	63323417	C	T	0.0404	99	0	54	freq-tum;off-target	QUAL=41	0	FOXD3	missense	0	0
+chr1	64835555	64835555	A	G	0.0365	329	0	219		QUAL=102	0.001	JAK1	intron	0	0
+chr1	64845531	64845531	G	C	0.0367	955	0	620		QUAL=191	0.0001	JAK1	synonymous	0	0
+chr1	64855567	64855567	G	A	0.0374	1204	0	705		QUAL=181	0.0025	JAK1	synonymous	0	0
+chr1	64855736	64855736	G	A	0.0255	431	0	230	freq-tum;off-target	QUAL=104	0.01	JAK1	intron	n/a (AF>5%)	n/a (AF>5%)
+chr1	64869412	64869412	T	C	0.0409	1225	0	755	freq-tum	QUAL=221	0	JAK1	synonymous	n/a (AF>5%)	n/a (AF>5%)
+chr1	97373416	97373416	A	G	0.0408	99	0	64	freq-tum;off-target	QUAL=41	0.0001	DPYD	intron	n/a (AF>5%)	n/a (AF>5%)
+chr1	97373460	97373460	A	G	0.0267	227	0	171	freq-tum;off-target	QUAL=71		DPYD	intron	1	14
+chr1	97515865	97515865	C	T	0.0318	882	0	495	freq-tum	QUAL=159		DPYD	missense	0	2

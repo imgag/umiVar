@@ -1,10 +1,10 @@
-all: clean CFDNA_01 CFDNA_02 select_monitoring
+all: clean CFDNA_01 CFDNA_02 select_monitoring post_filtering
 
 ##Test case for CI
-ci: clean download_test_reference CFDNA_02 select_monitoring
+ci: clean download_test_reference CFDNA_02 select_monitoring post_filtering
 
 clean:
-	rm -rf umiVar_CFDNA_01 umiVar_CFDNA_02 select_monitoring_01 select_monitoring_02 select_monitoring_03
+	rm -rf umiVar_CFDNA_01 umiVar_CFDNA_02 select_monitoring_01 select_monitoring_02 select_monitoring_03 postFilter01
 
 download_reference:
 	wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
@@ -77,4 +77,20 @@ run_select_monitoring_03:
 check_select_monitoring_03:
 	diff -u selectMonitoring_monitoring_03.tsv.out selectMonitoring03/monitoring.tsv
 	diff -u selectMonitoring_ranked_03.tsv.out selectMonitoring03/ranked.tsv
+
+post_filtering: run_post_filter_01 check_post_filter_01
+
+run_post_filter_01:
+	mkdir -p postFilter01
+	python3 ../cfDNA_postfiltering.py CFDNA03_01.GSvar,CFDNA04_01.GSvar,CFDNA05_01.GSvar,CFDNA06_01.GSvar \
+		postFilter01/CFDNA03_01.GSvar,postFilter01/CFDNA04_01.GSvar,postFilter01/CFDNA05_01.GSvar,postFilter01/CFDNA06_01.GSvar \
+		--tumor_samples DNA01_01-DNA02_01.GSvar
+
+check_post_filter_01:
+	diff -u CFDNA03_01.GSvar.out postFilter01/CFDNA03_01.GSvar
+	diff -u CFDNA03_01_combined.GSvar.out postFilter01/CFDNA03_01_combined.GSvar
+	diff -u CFDNA04_01.GSvar.out postFilter01/CFDNA04_01.GSvar
+	diff -u CFDNA05_01.GSvar.out postFilter01/CFDNA05_01.GSvar
+	diff -u CFDNA06_01.GSvar.out postFilter01/CFDNA06_01.GSvar
+
 

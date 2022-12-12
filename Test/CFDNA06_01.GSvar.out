@@ -1,0 +1,108 @@
+##ANALYSISTYPE=CFDNA
+##PIPELINE=megSAP 2022_08-82-g737d3bc4
+##GENOME_BUILD=GRCh38
+##CREATION_DATE=2022-11-02
+##SAMPLE=<ID=DXcf195323_01,Gender=male,ExternalSampleName=cfDNA-195323 A1,IsTumor=yes,IsFFPE=no,DiseaseGroup=Neoplasms,DiseaseStatus=n/a>
+##DESCRIPTION=filter=Annotations for filtering and ranking variants.
+##DESCRIPTION=quality=Quality parameters - variant quality (QUAL), depth (DP), quality divided by depth (QD), allele frequency (AF), mean mapping quality of alternate allele (MQM), probability of strand bias for alternate bases as phred score (SAP), probability of allele ballance as phred score (ABP)
+##DESCRIPTION=gene=Affected gene list (comma-separated).
+##DESCRIPTION=variant_type=Variant type.
+##DESCRIPTION=coding_and_splicing=Coding and splicing details (Gene, ENST number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=regulatory=Regulatory consequence details.
+##DESCRIPTION=OMIM=OMIM database annotation.
+##DESCRIPTION=ClinVar=ClinVar database annotation.
+##DESCRIPTION=HGMD=HGMD database annotation.
+##DESCRIPTION=RepeatMasker=RepeatMasker annotation.
+##DESCRIPTION=dbSNP=Identifier in dbSNP database.
+##DESCRIPTION=gnomAD=Allele frequency in gnomAD project.
+##DESCRIPTION=gnomAD_sub=Sub-population allele frequenciens (AFR,AMR,EAS,NFE,SAS) in gnomAD project.
+##DESCRIPTION=gnomAD_hom_hemi=Homoyzgous counts and hemizygous counts of gnomAD project (genome data).
+##DESCRIPTION=gnomAD_het=Heterozygous counts of the gnomAD project (genome data).
+##DESCRIPTION=gnomAD_wt=Wildtype counts of the gnomAD project (genome data).
+##DESCRIPTION=phyloP=phyloP (100way vertebrate) annotation. Deleterious threshold > 1.6.
+##DESCRIPTION=Sift=Sift effect prediction and score for each transcript: D=damaging, T=tolerated.
+##DESCRIPTION=PolyPhen=PolyPhen (humVar) effect prediction and score for each transcript: D=probably damaging, P=possibly damaging, B=benign.
+##DESCRIPTION=CADD=CADD pathogenicity prediction scores (scaled phred-like). Deleterious threshold > 10-20.
+##DESCRIPTION=REVEL=REVEL pathogenicity prediction score. Deleterious threshold > 0.5.
+##DESCRIPTION=MaxEntScan=MaxEntScan splicing prediction (reference bases score/alternate bases score).
+##DESCRIPTION=COSMIC=COSMIC somatic variant database anntotation.
+##DESCRIPTION=SpliceAI=SpliceAI prediction of splice-site variations. Probability of the variant being splice-altering (range from 0-1). The score is the maximum value of acceptor/donor gain/loss of all effected genes.
+##DESCRIPTION=PubMed=PubMed ids to publications on the given variant.
+##DESCRIPTION=NGSD_som_c=Somatic variant count in the NGSD.
+##DESCRIPTION=NGSD_som_p=Project names of project containing this somatic variant in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_interpretation=Somatic variant interpretation according VICC standard in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_comment=Somatic VICC interpretation comment in the NGSD.
+##DESCRIPTION=NGSD_hom=Homozygous variant count in NGSD.
+##DESCRIPTION=NGSD_het=Heterozygous variant count in NGSD.
+##DESCRIPTION=NGSD_group=Homozygous / heterozygous variant count in NGSD with the same disease group.
+##DESCRIPTION=classification=Classification from the NGSD.
+##DESCRIPTION=classification_comment=Classification comment from the NGSD.
+##DESCRIPTION=validation=Validation information from the NGSD. Validation results of other samples are listed in brackets!
+##DESCRIPTION=comment=Variant comments from the NGSD.
+##DESCRIPTION=gene_info=Gene information from NGSD (inheritance mode, gnomAD o/e scores).
+##DESCRIPTION=CMC_genes=Gene symbol from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_MUTATION_ID=COSV identifier of variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_disease=diseases with > 1% of samples mutated where disease = Primary site(tissue) / Primary histology / Sub-histology = Samples mutated / Samples tested = Frequency from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_DNDS_ratio=diseases with significant dn/ds ratio (q-value < 5%) from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_mutation_significance=Significance tier of the variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CANCERHOTSPOTS_AA_CHANGE=Amino acid change as in original cancerhotspots.org file
+##DESCRIPTION=CANCERHOTSPOTS_TOTAL_MUT=Total mutation count in cancerhotspots.org at certain amino acid position.
+##DESCRIPTION=CANCERHOTSPOTS_ALT_COUNT=Count of specific amino acid alteration at same position in cancerhotspots.org.
+##DESCRIPTION=tumor_af=Mutant allele frequency in tumor (Sample DXcf195323_01).
+##DESCRIPTION=tumor_dp=Tumor Depth (Sample DXcf195323_01).
+##DESCRIPTION=p-value=Uncorrected p-value
+##DESCRIPTION=m_AF=Multi-UMI alternative allele fraction
+##DESCRIPTION=m_REF=Multi-UMI reference-like read counts
+##DESCRIPTION=m_ALT=Multi-UMI alternative read counts
+##DESCRIPTION=Strand=Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse
+##DESCRIPTION=Sequence context=Sequence +/- 5bp around the variant.
+##DESCRIPTION=Homopolymer=Indicates if variant is in a homopolymer region.
+##DESCRIPTION=somatic_classification_comment=Somatic classification comment from the NGSD.
+##DESCRIPTION=somatic_classification=Somatic classification from the NGSD.
+##DESCRIPTION=normal_freq=Variant frequency.
+##DESCRIPTION=normal_depth=Sequencing depth at the variant position.
+##FILTER=Clustered_Variant=Clustered variants
+##FILTER=Error=Alternative counts inside the expected error rate distribution
+##FILTER=Fisher_Strand=Strand bias based on fisher test
+##FILTER=LC_Downstream=Low complexity region (5bps) downstream. ≥ 80% of bases show the same nucleotide  or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=LC_Upstream=Low complexity region (5bps) upstream. ≥ 80% of bases show the same nucleotide or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=Low_AC=Less than defined minimum of alternative counts
+##FILTER=Low_COV=Low coverage
+##FILTER=Low_qual_pos=Position enriched with too many low quality bases
+##FILTER=No_Coverage=No read coverage for this monitoring/ID variant in BAM file.
+##FILTER=PASS=Passed filter
+##FILTER=Strand_imbalanced=All alternative reads found in only one strand
+##FILTER=Variant_contamination=Reads supporting other alleles outside of the error rate distribution
+##FILTER=low_conf_region=Low confidence region for small variant calling based on gnomAD AC0/RF filters and IMGAG trio/twin data.
+##FILTER=off-target=Variant marked as 'off-target'.
+#chr	start	end	ref	obs	tumor_af	tumor_dp	p-value	Alt counts	m_AF	m_REF	m_ALT	Strand	Sequence context	Homopolymer	filter	quality	gene	normal_freq	normal_depth	Tumor_Filter	Post_Filter
+chr1	752894	752894	G	A	0.2563	7336	0.0	1880	0.24849000000000002	2743	907	841-1039-2370-3070	TTCTGGATCCA	False		QUAL=0	MPL	0.0	1493	freq-tum;HIGH_POP_AF	TUMOR_FILTER;
+chr1	762273	762273	G	A	0.2467	6882	0.0	1698	0.23639000000000002	2552	790	1003-695-2657-2506	CCCTCGGAAGG	False		QUAL=0	MUTYH	0.0	1520	PASS;HIGH_POP_AF	TUMOR_FILTER;
+chr1	762589	762589	G	A	0.1212	8159	3.2899999999999994e-25	989	0.11429	3743	483	499-490-3987-3162	GCCAGGGATCT	False		QUAL=0	PIK3C2B	0.0	2131	PASS;HIGH_POP_AF	TUMOR_FILTER;
+chr1	762592	762592	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	SOS1	0.0	893	freq-tum;HIGH_POP_AF	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	762601	762601	G	A	0.3224	8348	0.0	2691	0.30641	3246	1434	1027-1664-2486-3153	AACTCGAAATA	False		QUAL=0	LRP1B	0.0	578		
+chr1	792263	792263	A	T	0.1182	9576	6.21e-52	1132	0.11796	4337	580	694-438-5466-2974	ATTCTAATTAT	False		QUAL=0	KIT	0.0	1307		
+chr1	792480	792480	G	A	0.3114	11639	0.0	3624	0.30498000000000003	4118	1807	2065-1559-4705-3274	CTGATGAAATG	False		QUAL=0	TERT	0.0005	2169		
+chr1	866319	866319	C	T	0.1295	6392	0.0	828	0.12382	3248	459	487-341-2514-3016	AGTTTCCTCTT	False		QUAL=0	TNPO1	0.0	1172	off-target	TUMOR_FILTER;
+chr1	866511	866511	C	T	0.136	10003	8.200000000000001e-26	1360	0.13522	4483	701	832-528-5090-3535	GTCATCGTGAA	False		QUAL=0	RAD50	0.0	549	freq-tum;off-target	TUMOR_FILTER;
+chr1	871334	871334	G	A	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	ITK	0.0	1336		LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	876499	876499	C	T	0.2606	8418	0.0	2194	0.248	3284	1083	761-1433-2282-3930	CATTTCCTGGA	False		QUAL=0	RAC1	0.0	1907		
+chr1	877715	877715	C	T	0.1242	8858	0.0	1100	0.1164	4266	562	453-647-3361-4385	TGTTACCTGAG	False		QUAL=0	KMT2C	0.0	1479		
+chr1	877831	877831	G	A	0.2612	10645	0.0	2780	0.25824	3984	1387	1055-1725-3215-4624	ACACTGATTAT	False		QUAL=0	KMT2C	0.0	1858	freq-tum;off-target;HIGH_POP_AF	TUMOR_FILTER;
+chr1	879676	879676	G	A	0.2586	9929	0.0	2568	0.25884	3880	1355	1010-1558-2640-4697	AGTTCGAACTT	False		QUAL=0	KAT6A	0.0	1556	freq-tum	TUMOR_FILTER;
+chr1	879687	879687	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	PTPRD	0.0	1298		LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	880238	880238	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	ANK3	0.0	1481	PASS;HIGH_POP_AF	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	881627	881627	G	A	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	ANK3	0.0	2102	freq-tum	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	883625	883625	G	A	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	JMJD1C	0.0	884	LowEVS;off-target	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	883899	883899	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	WT1	0.0	1236	freq-tum;off-target	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	884091	884091	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	PTPRB	0.0	1786		LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	884091	884091	G	A	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	NCOR2	0.0	620		LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	887560	887560	C	T	0.2587	16330	0.0	4224	0.25248000000000004	4977	1681	643-3581-1833-10246	GATTTCCCACA	False		QUAL=0	FLT3	0.0	1860		
+chr1	887801	887801	C	T	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	FLT1	0.0	1929		LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	888639	888639	G	A	0.1173	9464	0.0	1110	0.1218	4283	594	384-726-3134-5199	CAGTCGATGGG	False		QUAL=0	CHD8	0.0	1504		
+chr1	888659	888659	G	-	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	AXIN1	0.0	1034		LOW_mALT_COUNT;INDEL;LOW_DEPTH;STRAND_BIAS;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	889158	889158	C	T	0.09300000000000001	9321	1.49e-24	867	0.08703	4511	430	250-617-2658-5773	AGGATCCATAG	False		QUAL=0	NF1	0.0	1989	LowEVS;off-target	TUMOR_FILTER;
+chr1	889159	889159	T	G	0.1039	8268	0.0	859	0.10622999999999999	3761	447	407-452-2805-4603	AATTGTGCAGA	False		QUAL=0	NF1	0.0	1157	freq-tum	TUMOR_FILTER;
+chr1	892745	892745	G	A	0.0	0		0	0.0	0	0	0-0-0-0	.	False	No_Coverage	QUAL=0	STAT3	0.0	1923	off-target	LOW_mALT_COUNT;LOW_DEPTH;STRAND_BIAS;TUMOR_FILTER;NON-INFORMATIVE;LOW_MULTIDEPTH;
+chr1	894573	894573	C	T	0.2415	9155	0.0	2211	0.22733000000000003	3664	1078	813-1398-2580-4346	TTCTTCGTGAA	False		QUAL=0	CLTC	0.0006	1640	freq-tum;off-target	TUMOR_FILTER;
+chr1	897325	897325	C	T	0.0931	8314	2.7899999999999994e-25	774	0.09011	3938	390	261-513-3581-3938	AATACCAGGAC	False		QUAL=0	ARHGAP35	0.0	1801	freq-tum;off-target	TUMOR_FILTER;

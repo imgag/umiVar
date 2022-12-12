@@ -1,0 +1,110 @@
+##ANALYSISTYPE=CFDNA
+##PIPELINE=megSAP 2021_12-156-g1aba14c6
+##GENOME_BUILD=GRCh38
+##CREATION_DATE=2022-06-09
+##SAMPLE=<ID=cfDNA197276A1_01,Gender=male,ExternalSampleName=cfDNA-197276 A1,IsTumor=yes,IsFFPE=no,DiseaseGroup=Neoplasms,DiseaseStatus=n/a>
+##DESCRIPTION=filter=Annotations for filtering and ranking variants.
+##DESCRIPTION=quality=Quality parameters - variant quality (QUAL), depth (DP), allele frequency (AF), mean mapping quality of alternate allele (MQM), probability of strand bias for alternate bases as phred score (SAP), probability of allele ballance as phred score (ABP)
+##DESCRIPTION=gene=Affected gene list (comma-separated).
+##DESCRIPTION=variant_type=Variant type.
+##DESCRIPTION=coding_and_splicing=Coding and splicing details (Gene, ENST number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=coding_and_splicing_refseq=Coding and splicing details based on RefSeq (Gene, RefSeq id, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=regulatory=Regulatory consequence details.
+##DESCRIPTION=OMIM=OMIM database annotation.
+##DESCRIPTION=ClinVar=ClinVar database annotation.
+##DESCRIPTION=HGMD=HGMD database annotation.
+##DESCRIPTION=RepeatMasker=RepeatMasker annotation.
+##DESCRIPTION=dbSNP=Identifier in dbSNP database.
+##DESCRIPTION=gnomAD=Allele frequency in gnomAD project.
+##DESCRIPTION=gnomAD_sub=Sub-population allele frequenciens (AFR,AMR,EAS,NFE,SAS) in gnomAD project.
+##DESCRIPTION=gnomAD_hom_hemi=Homoyzgous counts and hemizygous counts of gnomAD project (genome data).
+##DESCRIPTION=gnomAD_het=Heterozygous counts of the gnomAD project (genome data).
+##DESCRIPTION=gnomAD_wt=Wildtype counts of the gnomAD project (genome data).
+##DESCRIPTION=phyloP=phyloP (100way vertebrate) annotation. Deleterious threshold > 1.6.
+##DESCRIPTION=Sift=Sift effect prediction and score for each transcript: D=damaging, T=tolerated.
+##DESCRIPTION=PolyPhen=PolyPhen (humVar) effect prediction and score for each transcript: D=probably damaging, P=possibly damaging, B=benign.
+##DESCRIPTION=CADD=CADD pathogenicity prediction scores (scaled phred-like). Deleterious threshold > 10-20.
+##DESCRIPTION=REVEL=REVEL pathogenicity prediction score. Deleterious threshold > 0.5.
+##DESCRIPTION=MaxEntScan=MaxEntScan splicing prediction (reference bases score/alternate bases score).
+##DESCRIPTION=COSMIC=COSMIC somatic variant database anntotation.
+##DESCRIPTION=SpliceAI=SpliceAI prediction of splice-site variations. Probability of the variant being splice-altering (range from 0-1). The score is the maximum value of acceptor/donor gain/loss of all effected genes.
+##DESCRIPTION=PubMed=PubMed ids to publications on the given variant.
+##DESCRIPTION=NGSD_som_c=Somatic variant count in the NGSD.
+##DESCRIPTION=NGSD_som_p=Project names of project containing this somatic variant in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_interpretation=Somatic variant interpretation according VICC standard in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_comment=Somatic VICC interpretation comment in the NGSD.
+##DESCRIPTION=NGSD_hom=Homozygous variant count in NGSD.
+##DESCRIPTION=NGSD_het=Heterozygous variant count in NGSD.
+##DESCRIPTION=NGSD_group=Homozygous / heterozygous variant count in NGSD with the same disease group.
+##DESCRIPTION=classification=Classification from the NGSD.
+##DESCRIPTION=classification_comment=Classification comment from the NGSD.
+##DESCRIPTION=validation=Validation information from the NGSD. Validation results of other samples are listed in brackets!
+##DESCRIPTION=comment=Variant comments from the NGSD.
+##DESCRIPTION=gene_info=Gene information from NGSD (inheritance mode, gnomAD o/e scores).
+##DESCRIPTION=CMC_genes=Gene symbol from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_MUTATION_ID=COSV identifier of variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_disease=diseases with > 1% of samples mutated where disease = Primary site(tissue) / Primary histology / Sub-histology = Samples mutated / Samples tested = Frequency from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_DNDS_ratio=diseases with significant dn/ds ratio (q-value < 5%) from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_mutation_significance=Significance tier of the variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CANCERHOTSPOTS_AA_CHANGE=Amino acid change as in original cancerhotspots.org file
+##DESCRIPTION=CANCERHOTSPOTS_TOTAL_MUT=Total mutation count in cancerhotspots.org at certain amino acid position.
+##DESCRIPTION=CANCERHOTSPOTS_ALT_COUNT=Count of specific amino acid alteration at same position in cancerhotspots.org.
+##DESCRIPTION=tumor_af=Mutant allele frequency in tumor (Sample cfDNA197276A1_01).
+##DESCRIPTION=tumor_dp=Tumor Depth (Sample cfDNA197276A1_01).
+##DESCRIPTION=p-value=Uncorrected p-value
+##DESCRIPTION=m_AF=Multi-UMI alternative allele fraction
+##DESCRIPTION=m_REF=Multi-UMI reference-like read counts
+##DESCRIPTION=m_ALT=Multi-UMI alternative read counts
+##DESCRIPTION=Strand=Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse
+##DESCRIPTION=Sequence context=Sequence +/- 5bp around the variant.
+##DESCRIPTION=Homopolymer=Indicates if variant is in a homopolymer region.
+##DESCRIPTION=somatic_classification_comment=Somatic classification comment from the NGSD.
+##DESCRIPTION=somatic_classification=Somatic classification from the NGSD.
+##DESCRIPTION=normal_freq=Variant frequency.
+##DESCRIPTION=normal_depth=Sequencing depth at the variant position.
+##FILTER=Clustered_Variant=Clustered variants
+##FILTER=Error=Alternative counts inside the expected error rate distribution
+##FILTER=Fisher_Strand=Strand bias based on fisher test
+##FILTER=LC_Downstream=Low complexity region (5bps) downstream. ≥ 80% of bases show the same nucleotide  or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=LC_Upstream=Low complexity region (5bps) upstream. ≥ 80% of bases show the same nucleotide or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=Low_AC=Less than defined minimum of alternative counts
+##FILTER=Low_COV=Low coverage
+##FILTER=Low_qual_pos=Position enriched with too many low quality bases
+##FILTER=No_Coverage=No read coverage for this monitoring/ID variant in BAM file.
+##FILTER=PASS=Passed filter
+##FILTER=Strand_imbalanced=All alternative reads found in only one strand
+##FILTER=Variant_Contamination=no description available
+##FILTER=Variant_contamination=Reads supporting other alleles outside of the error rate distribution
+##FILTER=low_conf_region=Low confidence region for small variant calling based on gnomAD AC0/RF filters and IMGAG trio/twin data.
+##FILTER=off-target=Variant marked as 'off-target'.
+#chr	start	end	ref	obs	tumor_af	tumor_dp	p-value	Alt counts	m_AF	m_REF	m_ALT	Strand	Sequence context	Homopolymer	filter	quality	gene	normal_freq	normal_depth
+chr1	752894	752894	G	A	0.1522	13126	9.62E-15	1998	0.14951	8032	1412	919-1079-5240-5881	TTCTGGATCCA	false		QUAL=0	MPL	0	1493
+chr1	762273	762273	G	A	0.1337	11370	9.74E-14	1520	0.133	7171	1100	863-657-4801-5045	CCCTCGGAAGG	false		QUAL=0	MUTYH	0	1520
+chr1	762589	762589	G	A	0.0545	14538	3.68E-10	792	0.0546	10009	578	398-394-7485-6248	GCCAGGGATCT	false		QUAL=0	PIK3C2B	0	2131
+chr1	762592	762592	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	SOS1	0	893
+chr1	762601	762601	G	A	0.1676	12345	3.43E-15	2069	0.16564	7480	1485	843-1226-4547-5715	AACTCGAAATA	false		QUAL=0	LRP1B	0	578
+chr1	792263	792263	A	T	0.0787	15313	0.00E+00	1205	0.07883	10330	884	624-581-9018-5087	ATTCTAATTAT	false		QUAL=0	KIT	0	1307
+chr1	792480	792480	G	A	0.1747	18433	2.07E-15	3220	0.1756	11155	2376	1858-1362-9240-5956	CTGATGAAATG	false		QUAL=0	TERT	0.0005	2169
+chr1	866319	866319	C	T	0.0708	10725	4.85E-11	759	0.06718	7415	534	399-360-4470-5462	AGTTTCCTCTT	false	Variant_Contamination	QUAL=0	TNPO1	0	1172
+chr1	866511	866511	C	T	0.0668	16255	8.38E-11	1085	0.06593	11080	782	648-437-8761-6402	GTCATCGTGAA	false		QUAL=0	RAD50	0	549
+chr1	871334	871334	G	A	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	ITK	0	1336
+chr1	876499	876499	C	T	0.133	12338	6.99E-14	1641	0.13012	7915	1184	595-1046-4019-6673	CATTTCCTGGA	false	Clustered_Variant	QUAL=0	RAC1	0	1907
+chr1	877715	877715	C	T	0.0723	15126	5.08E-11	1093	0.07159	10401	802	483-610-6133-7896	TGTTACCTGAG	false		QUAL=0	KMT2C	0	1479
+chr1	877831	877831	G	A	0.1526	14625	1.17E-14	2232	0.1496	8521	1499	939-1293-5835-6533	ACACTGATTAT	false		QUAL=0	KMT2C	0	1858
+chr1	879676	879676	G	A	0.1483	14530	2.17E-14	2155	0.14558	9156	1560	887-1268-4703-7663	AGTTCGAACTT	false		QUAL=0	KAT6A	0	1556
+chr1	879687	879687	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	PTPRD	0	1298
+chr1	880238	880238	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	ANK3	0	1481
+chr1	881627	881627	G	A	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	ANK3	0	2102
+chr1	883625	883625	G	A	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	JMJD1C	0	884
+chr1	883899	883899	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	WT1	0	1236
+chr1	884091	884091	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	PTPRB	0	1786
+chr1	884091	884091	G	A	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	NCOR2	0	620
+chr1	887560	887560	C	T	0.141	22915	4.01E-14	3232	0.13924	9693	1568	689-2543-3619-16047	GATTTCCCACA	false		QUAL=0	FLT3	0	1860
+chr1	887801	887801	C	T	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	FLT1	0	1929
+chr1	888639	888639	G	A	0.072	13047	5.71E-11	939	0.07044	8776	665	389-550-4855-7247	CAGTCGATGGG	false		QUAL=0	CHD8	0	1504
+chr1	888659	888659	G	-	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	AXIN1	0	1034
+chr1	889158	889158	C	T	0.0445	15596	9.64E-10	694	0.04313	11092	500	224-470-4933-9957	AGGATCCATAG	false		QUAL=0	NF1	0	1989
+chr1	889159	889159	T	G	0.066	13783	1.68E-24	910	0.06402	9138	625	429-481-5002-7871	AATTGTGCAGA	false		QUAL=0	NF1	0	1157
+chr1	892745	892745	G	A	0	0		0	0	0	0	0-0-0-0	.	false	No_Coverage	QUAL=0	STAT3	0	1923
+chr1	894573	894573	C	T	0.1286	14269	1.04E-13	1835	0.12775	9074	1329	598-1237-4745-7679	TTCTTCGTGAA	false		QUAL=0	CLTC	0.0006	1640
+chr1	897325	897325	C	T	0.0411	15177	1.71E-09	623	0.04043	10729	452	249-374-6896-7650	AATACCAGGAC	false		QUAL=0	ARHGAP35	0	1801
