@@ -359,11 +359,11 @@ def main():
     for sample, output_file_path in zip(cfdna_samples, cfdna_output_file_paths):
         with open(output_file_path, "w") as file:
             file.write("".join(single_sample_buffer[sample + "_header"]))
-        single_sample_buffer[sample].to_csv(output_file_path, sep="\t", index=False, mode='a')
+        single_sample_buffer[sample].to_csv(output_file_path, float_format="%.8g", sep="\t", index=False, mode='a')
 
     # store in file
     print("Writing output (combined)...")
-    combined_dataset.to_csv(output_file_path_combined, sep="\t", index=False)
+    combined_dataset.to_csv(output_file_path_combined, float_format="%.8g", sep="\t", index=False)
 
     with open(args.log_file, 'a') as file:
         file.write(log)
