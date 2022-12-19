@@ -131,28 +131,32 @@ def main():
     cfdna_samples = [os.path.basename(path)[:ext_offset] for path in cfdna_input_file_paths]
     print("cfDNA samples: " + ",".join(cfdna_samples))
 
-    tn_sample_file_paths = args.tumor_samples.split(',')
-    tn_samples = [os.path.basename(path)[:ext_offset] for path in tn_sample_file_paths]
-    # check if file exists
-    for path in tn_sample_file_paths:
-        if not os.path.exists(path) or not os.path.isfile(path):
-            raise FileNotFoundError("Tumor-normal GSvar file '" + path + "' does not exist!")
-    print("tumor-normal samples: " + ",".join(tn_samples))
-
-    # parse tumor files
     combined_gsvar_filter = pd.DataFrame()
-    for path, tumor_normal in zip(tn_sample_file_paths, tn_samples):
-        tumor_gsvar = parse_tumor_filter_column(path, tumor_normal)
-        combined_gsvar_filter = pd.concat([combined_gsvar_filter, tumor_gsvar], axis=1)
-    # collapse filter columns:
-    combined_gsvar_filter.fillna("NOT_CALLED", inplace=True)
-    combined_gsvar_filter = combined_gsvar_filter[~(combined_gsvar_filter == "PASS").any(axis=1)]
-    combined_gsvar_filter["Tumor_Filter"] = combined_gsvar_filter.apply(";".join, axis=1)
-    if combined_gsvar_filter.size > 0:
-        # remove off-target filter, if not off-target in all tumor samples
-        mask = combined_gsvar_filter.apply(lambda x: off_target_filter(x, tn_samples), axis=1)
-        combined_gsvar_filter.loc[~mask, "Tumor_Filter"] = combined_gsvar_filter["Tumor_Filter"].str.replace("off-target;", "")
-    # combined_gsvar_filter = combined_gsvar_filter["Tumor_Filter"]
+    if args.tumor_samples.strip() != "":
+        tn_sample_file_paths = args.tumor_samples.split(',')
+        tn_samples = [os.path.basename(path)[:ext_offset] for path in tn_sample_file_paths]
+        # check if file exists
+        for path in tn_sample_file_paths:
+            if not os.path.exists(path) or not os.path.isfile(path):
+                raise FileNotFoundError("Tumor-normal GSvar file '" + path + "' does not exist!")
+        print("tumor-normal samples: " + ",".join(tn_samples))
+
+        # parse tumor files
+
+        for path, tumor_normal in zip(tn_sample_file_paths, tn_samples):
+            tumor_gsvar = parse_tumor_filter_column(path, tumor_normal)
+            combined_gsvar_filter = pd.concat([combined_gsvar_filter, tumor_gsvar], axis=1)
+        # collapse filter columns:
+        combined_gsvar_filter.fillna("NOT_CALLED", inplace=True)
+        combined_gsvar_filter = combined_gsvar_filter[~(combined_gsvar_filter == "PASS").any(axis=1)]
+        combined_gsvar_filter["Tumor_Filter"] = combined_gsvar_filter.apply(";".join, axis=1)
+        if combined_gsvar_filter.size > 0:
+            # remove off-target filter, if not off-target in all tumor samples
+            mask = combined_gsvar_filter.apply(lambda x: off_target_filter(x, tn_samples), axis=1)
+            combined_gsvar_filter.loc[~mask, "Tumor_Filter"] = combined_gsvar_filter["Tumor_Filter"].str.replace("off-target;", "")
+        # combined_gsvar_filter = combined_gsvar_filter["Tumor_Filter"]
+    else:
+        combined_gsvar_filter["Tumor_Filter"] = []
 
     # perform post filtering
     combined_dataset = pd.DataFrame()
