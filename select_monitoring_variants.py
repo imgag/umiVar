@@ -170,14 +170,20 @@ class MonitoringVariant:
                     alt_format = vcf_column[4] + "U"
                     ref_t1, ref_t2 = tumor_table[ref_format].split(",")
                     alt_t1, alt_t2 = tumor_table[alt_format].split(",")
-                    af = int(alt_t1) / (int(ref_t1) + int(alt_t1))
+                    if (int(ref_t1) + int(alt_t1)) > 0:
+                        af = int(alt_t1) / (int(ref_t1) + int(alt_t1))
+                    else:
+                        af = 0
 
                 # Compute REF_COUNT, ALT_COUNT and AF for indels
                 else:
                     ref_t1, ref_t2 = tumor_table['TAR'].split(",")
                     alt_t1, alt_t2 = tumor_table['TIR'].split(",")
                     tumor_dp = int(ref_t1) + int(alt_t1)
-                    af = int(alt_t1) / tumor_dp
+                    if tumor_dp > 0:
+                        af = int(alt_t1) / tumor_dp
+                    else:
+                        af = 0
 
                 # Generate locus ID from chr and pos (note: deletions in GSvar are not pos - 1
                 locus_vcf = vcf_column[0] + "_" + vcf_column[1]

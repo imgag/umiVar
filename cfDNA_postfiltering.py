@@ -357,13 +357,19 @@ def main():
     # store filtered monitoring file:
     print("Writing output (single sample)...")
     for sample, output_file_path in zip(cfdna_samples, cfdna_output_file_paths):
+        # skip if output file name is empty
+        if output_file_path.strip() == "":
+            continue
         with open(output_file_path, "w") as file:
             file.write("".join(single_sample_buffer[sample + "_header"]))
         single_sample_buffer[sample].to_csv(output_file_path, float_format="%.8g", sep="\t", index=False, mode='a')
 
     # store in file
     print("Writing output (combined)...")
-    combined_dataset.to_csv(output_file_path_combined, float_format="%.8g", sep="\t", index=False)
+    if cfdna_output_file_paths[0].strip() != "":
+        with open(cfdna_output_file_paths[0], "w") as file:
+            file.write("".join(single_sample_buffer[cfdna_samples[0] + "_header"]))
+        combined_dataset.to_csv(output_file_path_combined, float_format="%.8g", sep="\t", index=False, mode='a')
 
     with open(args.log_file, 'a') as file:
         file.write(log)
