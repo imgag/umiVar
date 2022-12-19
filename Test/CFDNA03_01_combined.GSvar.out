@@ -1,3 +1,80 @@
+##ANALYSISTYPE=CFDNA
+##PIPELINE=megSAP 2022_08-82-g737d3bc4
+##GENOME_BUILD=GRCh38
+##CREATION_DATE=2022-11-02
+##DESCRIPTION=filter=Annotations for filtering and ranking variants.
+##DESCRIPTION=quality=Quality parameters - variant quality (QUAL), depth (DP), quality divided by depth (QD), allele frequency (AF), mean mapping quality of alternate allele (MQM), probability of strand bias for alternate bases as phred score (SAP), probability of allele ballance as phred score (ABP)
+##DESCRIPTION=gene=Affected gene list (comma-separated).
+##DESCRIPTION=variant_type=Variant type.
+##DESCRIPTION=coding_and_splicing=Coding and splicing details (Gene, ENST number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam domain).
+##DESCRIPTION=regulatory=Regulatory consequence details.
+##DESCRIPTION=OMIM=OMIM database annotation.
+##DESCRIPTION=ClinVar=ClinVar database annotation.
+##DESCRIPTION=HGMD=HGMD database annotation.
+##DESCRIPTION=RepeatMasker=RepeatMasker annotation.
+##DESCRIPTION=dbSNP=Identifier in dbSNP database.
+##DESCRIPTION=gnomAD=Allele frequency in gnomAD project.
+##DESCRIPTION=gnomAD_sub=Sub-population allele frequenciens (AFR,AMR,EAS,NFE,SAS) in gnomAD project.
+##DESCRIPTION=gnomAD_hom_hemi=Homoyzgous counts and hemizygous counts of gnomAD project (genome data).
+##DESCRIPTION=gnomAD_het=Heterozygous counts of the gnomAD project (genome data).
+##DESCRIPTION=gnomAD_wt=Wildtype counts of the gnomAD project (genome data).
+##DESCRIPTION=phyloP=phyloP (100way vertebrate) annotation. Deleterious threshold > 1.6.
+##DESCRIPTION=Sift=Sift effect prediction and score for each transcript: D=damaging, T=tolerated.
+##DESCRIPTION=PolyPhen=PolyPhen (humVar) effect prediction and score for each transcript: D=probably damaging, P=possibly damaging, B=benign.
+##DESCRIPTION=CADD=CADD pathogenicity prediction scores (scaled phred-like). Deleterious threshold > 10-20.
+##DESCRIPTION=REVEL=REVEL pathogenicity prediction score. Deleterious threshold > 0.5.
+##DESCRIPTION=MaxEntScan=MaxEntScan splicing prediction (reference bases score/alternate bases score).
+##DESCRIPTION=COSMIC=COSMIC somatic variant database anntotation.
+##DESCRIPTION=SpliceAI=SpliceAI prediction of splice-site variations. Probability of the variant being splice-altering (range from 0-1). The score is the maximum value of acceptor/donor gain/loss of all effected genes.
+##DESCRIPTION=PubMed=PubMed ids to publications on the given variant.
+##DESCRIPTION=NGSD_som_c=Somatic variant count in the NGSD.
+##DESCRIPTION=NGSD_som_p=Project names of project containing this somatic variant in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_interpretation=Somatic variant interpretation according VICC standard in the NGSD.
+##DESCRIPTION=NGSD_som_vicc_comment=Somatic VICC interpretation comment in the NGSD.
+##DESCRIPTION=NGSD_hom=Homozygous variant count in NGSD.
+##DESCRIPTION=NGSD_het=Heterozygous variant count in NGSD.
+##DESCRIPTION=NGSD_group=Homozygous / heterozygous variant count in NGSD with the same disease group.
+##DESCRIPTION=classification=Classification from the NGSD.
+##DESCRIPTION=classification_comment=Classification comment from the NGSD.
+##DESCRIPTION=validation=Validation information from the NGSD. Validation results of other samples are listed in brackets!
+##DESCRIPTION=comment=Variant comments from the NGSD.
+##DESCRIPTION=gene_info=Gene information from NGSD (inheritance mode, gnomAD o/e scores).
+##DESCRIPTION=CMC_genes=Gene symbol from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_MUTATION_ID=COSV identifier of variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_disease=diseases with > 1% of samples mutated where disease = Primary site(tissue) / Primary histology / Sub-histology = Samples mutated / Samples tested = Frequency from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_DNDS_ratio=diseases with significant dn/ds ratio (q-value < 5%) from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CMC_mutation_significance=Significance tier of the variant from COSMIC Cancer Mutation Census (CMC).
+##DESCRIPTION=CANCERHOTSPOTS_AA_CHANGE=Amino acid change as in original cancerhotspots.org file
+##DESCRIPTION=CANCERHOTSPOTS_TOTAL_MUT=Total mutation count in cancerhotspots.org at certain amino acid position.
+##DESCRIPTION=CANCERHOTSPOTS_ALT_COUNT=Count of specific amino acid alteration at same position in cancerhotspots.org.
+##DESCRIPTION=tumor_af=Mutant allele frequency in tumor (Sample DXcf195788_01).
+##DESCRIPTION=tumor_dp=Tumor Depth (Sample DXcf195788_01).
+##DESCRIPTION=p-value=Uncorrected p-value
+##DESCRIPTION=m_AF=Multi-UMI alternative allele fraction
+##DESCRIPTION=m_REF=Multi-UMI reference-like read counts
+##DESCRIPTION=m_ALT=Multi-UMI alternative read counts
+##DESCRIPTION=Strand=Alleles in strands: Alternative forward, Alternative reverse, Reference forward, Reference reverse
+##DESCRIPTION=Sequence context=Sequence +/- 5bp around the variant.
+##DESCRIPTION=Homopolymer=Indicates if variant is in a homopolymer region.
+##DESCRIPTION=somatic_classification_comment=Somatic classification comment from the NGSD.
+##DESCRIPTION=somatic_classification=Somatic classification from the NGSD.
+##DESCRIPTION=normal_freq=Variant frequency.
+##DESCRIPTION=normal_depth=Sequencing depth at the variant position.
+##FILTER=Clustered_Variant=Clustered variants
+##FILTER=Error=Alternative counts inside the expected error rate distribution
+##FILTER=Fisher_Strand=Strand bias based on fisher test
+##FILTER=LC_Downstream=Low complexity region (5bps) downstream. ≥ 80% of bases show the same nucleotide  or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=LC_Upstream=Low complexity region (5bps) upstream. ≥ 80% of bases show the same nucleotide or tandem of ≥ 3 equal nucleotides in a row
+##FILTER=Low_AC=Less than defined minimum of alternative counts
+##FILTER=Low_COV=Low coverage
+##FILTER=Low_qual_pos=Position enriched with too many low quality bases
+##FILTER=No_Coverage=No read coverage for this monitoring/ID variant in BAM file.
+##FILTER=PASS=Passed filter
+##FILTER=Strand_imbalanced=All alternative reads found in only one strand
+##FILTER=Variant_Contamination=no description available
+##FILTER=Variant_contamination=Reads supporting other alleles outside of the error rate distribution
+##FILTER=low_conf_region=Low confidence region for small variant calling based on gnomAD AC0/RF filters and IMGAG trio/twin data.
+##FILTER=off-target=Variant marked as 'off-target'.
 #chr	start	end	ref	obs	CFDNA03_01_m_REF	CFDNA03_01_m_ALT	CFDNA03_01_m_AF	CFDNA03_01_p-value	CFDNA03_01_Strand	CFDNA03_01_Homopolymer	CFDNA03_01_filter	CFDNA04_01_m_REF	CFDNA04_01_m_ALT	CFDNA04_01_m_AF	CFDNA04_01_p-value	CFDNA04_01_Strand	CFDNA04_01_Homopolymer	CFDNA04_01_filter	CFDNA05_01_m_REF	CFDNA05_01_m_ALT	CFDNA05_01_m_AF	CFDNA05_01_p-value	CFDNA05_01_Strand	CFDNA05_01_Homopolymer	CFDNA05_01_filter	CFDNA06_01_m_REF	CFDNA06_01_m_ALT	CFDNA06_01_m_AF	CFDNA06_01_p-value	CFDNA06_01_Strand	CFDNA06_01_Homopolymer	CFDNA06_01_filter
 chr1	752894	752894	T	C	10317	1071	0.09405	5.16e-11	718-848-6555-8139	False		5355	802	0.13026	6.73e-14	541-626-3587-3918	False		8032	1412	0.14951	9.62e-15	919-1079-5240-5881	False								
 chr1	762273	762273	G	A	9673	928	0.08754	1.53e-10	729-617-6166-7476	False		4807	573	0.10651	1.04e-12	472-360-3081-3672	False		7171	1100	0.133	9.74e-14	863-657-4801-5045	False		2552	790	0.23639	0	1003-695-2657-2506	False	

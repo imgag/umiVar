@@ -367,7 +367,7 @@ def main():
     # store in file
     print("Writing output (combined)...")
     if cfdna_output_file_paths[0].strip() != "":
-        with open(cfdna_output_file_paths[0], "w") as file:
+        with open(output_file_path_combined, "w") as file:
             file.write("".join(single_sample_buffer[cfdna_samples[0] + "_header"]))
         combined_dataset.to_csv(output_file_path_combined, float_format="%.8g", sep="\t", index=False, mode='a')
 
