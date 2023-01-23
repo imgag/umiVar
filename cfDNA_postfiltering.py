@@ -85,6 +85,12 @@ def load_sample_file(path):
     # read TSV file
     tsv = pd.read_csv(path, sep='\t', header=0, skiprows=skip_rows)
 
+    # remove previous annotations
+    if "Tumor_Filter" in tsv.columns:
+        tsv = tsv.drop("Tumor_Filter", axis=1)
+    if "Post_Filter" in tsv.columns:
+        tsv = tsv.drop("Post_Filter", axis=1)
+
     return comments, tsv
 
 
