@@ -364,6 +364,9 @@ def main():
     if file_extension == "GSvar":
         combined_dataset.loc["median", header_names["end"]] = -1
 
+    # set data types for homopolymere columns
+    combined_dataset.loc[:, combined_dataset.columns.str.endswith("_Homopolymer")] = combined_dataset.loc[:, combined_dataset.columns.str.endswith("_Homopolymer")].astype(bool)
+
     # store filtered monitoring file:
     print("Writing output (single sample)...")
     for sample, output_file_path in zip(cfdna_samples, cfdna_output_file_paths):
