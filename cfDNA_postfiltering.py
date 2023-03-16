@@ -151,7 +151,7 @@ def main():
 
         for path, tumor_normal in zip(tn_sample_file_paths, tn_samples):
             tumor_gsvar = parse_tumor_filter_column(path, tumor_normal)
-            combined_gsvar_filter = pd.concat([combined_gsvar_filter, tumor_gsvar], axis=1)
+            combined_gsvar_filter = pd.concat([combined_gsvar_filter, tumor_gsvar], axis=1, sort=True)
         # collapse filter columns:
         combined_gsvar_filter.fillna("NOT_CALLED", inplace=True)
         combined_gsvar_filter = combined_gsvar_filter[~(combined_gsvar_filter == "PASS").any(axis=1)]
