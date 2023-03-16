@@ -83,6 +83,16 @@ def parse_config_file(config_file_path):
     return config
 
 
+# Parse environment variables for binary paths
+def parse_env_config(config):
+    for key in config.keys():
+        value = os.getenv("umiVar_" + key + "_binary")
+        if not value is None:
+            print("Binary path for " + key + " found in environment variables: " + value)
+            config[key] = value
+    return config
+
+
 # Main function
 def main():
     # Take time for speed check
@@ -134,6 +144,7 @@ def main():
 
     # binary paths
     config = parse_config_file(os.path.join(script_directory, "settings.ini"))
+    config = parse_env_config(config)
 
     # No output folder specified: create folder in current working directory
     if not out_dir:
