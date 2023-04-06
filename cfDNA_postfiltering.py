@@ -83,7 +83,7 @@ def load_sample_file(path):
                 break
 
     # read TSV file
-    tsv = pd.read_csv(path, sep='\t', header=0, skiprows=skip_rows)
+    tsv = pd.read_csv(path, sep='\t', header=0, skiprows=skip_rows, encoding="ISO-8859-1")
 
     # remove previous annotations
     if "Tumor_Filter" in tsv.columns:
