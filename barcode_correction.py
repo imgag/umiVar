@@ -168,8 +168,8 @@ def consensus_quality(qualities, min_bq, errors):
         new_qual = max_qual
 
     else:
-        # Unreliable consensus labeled with quality 0: if 3 or more discordant bases, or more than 25% discordant bases
-        if (errors >= 1 and float(errors) / (copies + errors) > 0.25) or errors >= 3:
+        # Unreliable consensus labeled with quality 0: if more than 25% discordant bases
+        if (errors >= 1 and float(errors) / (copies + errors) > 0.25):
             new_qual = 0
 
         # Otherwise, the maximum quality value across PCR copies is used as new quality, with minimum of 30
