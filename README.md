@@ -1,4 +1,4 @@
-# umiVar2
+# umiVar
 
 Detection of ultra-low fraction variants using unique molecular barcodes and ultra-deep sequencing.\
 PCR copies of the same original DNA molecule are recognized based on their identical barcode and \
