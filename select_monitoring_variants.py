@@ -113,6 +113,8 @@ class MonitoringVariant:
         else:
             fh_vcf_in = open(self.input_vcf_file)
 
+        caller = "unknown";
+
         with fh_vcf_in as vcf_file:
             for vcf_line in vcf_file:
                 vcf_line = vcf_line.rstrip('\n')
@@ -120,8 +122,20 @@ class MonitoringVariant:
                 # VCF Header lines are simply printed to output vcf file
                 if vcf_line[0] == '#':
                     fh_vcf.write(vcf_line + '\n')
+                    
+                    #check for caller:
+                    
+                    if vcf_line.startswith("##source="):
+                        if "strelka" in vcf_line: 
+                            caller = "strelka"
+                        if "dragen" in vcf_line.lower(): 
+                            caller = "dragen"
+                    
                     continue
-
+                   
+                if caller == "unknown":
+                    raise ValueError("Unknown caller for the VCF file, couldn't find caller line of supported caller (Strelka2, Dragen). Expected ##source=strelka or ##source=Dragen_somatic_calling")
+                
                 # Get VCF fields of a variant entry
                 vcf_column = vcf_line.split("\t")
 
@@ -163,27 +177,39 @@ class MonitoringVariant:
                 # Get depth of coverage for tumor and normal sample
                 normal_dp = int(normal_table['DP'])
                 tumor_dp = int(tumor_table['DP'])
-
+                
+                if caller == "strelka":
                 # Compute REF_COUNT, ALT_COUNT and AF for SNVs
-                if is_indel == 0:
-                    ref_format = vcf_column[3] + "U"
-                    alt_format = vcf_column[4] + "U"
-                    ref_t1, ref_t2 = tumor_table[ref_format].split(",")
-                    alt_t1, alt_t2 = tumor_table[alt_format].split(",")
-                    if (int(ref_t1) + int(alt_t1)) > 0:
-                        af = int(alt_t1) / (int(ref_t1) + int(alt_t1))
-                    else:
-                        af = 0
+                    if is_indel == 0:
+                        ref_format = vcf_column[3] + "U"
+                        alt_format = vcf_column[4] + "U"
+                        ref_t1, ref_t2 = tumor_table[ref_format].split(",")
+                        alt_t1, alt_t2 = tumor_table[alt_format].split(",")
+                        if (int(ref_t1) + int(alt_t1)) > 0:
+                            af = int(alt_t1) / (int(ref_t1) + int(alt_t1))
+                        else:
+                            af = 0
 
-                # Compute REF_COUNT, ALT_COUNT and AF for indels
-                else:
-                    ref_t1, ref_t2 = tumor_table['TAR'].split(",")
-                    alt_t1, alt_t2 = tumor_table['TIR'].split(",")
-                    tumor_dp = int(ref_t1) + int(alt_t1)
-                    if tumor_dp > 0:
-                        af = int(alt_t1) / tumor_dp
+                    # Compute REF_COUNT, ALT_COUNT and AF for indels
                     else:
-                        af = 0
+                        ref_t1, ref_t2 = tumor_table['TAR'].split(",")
+                        alt_t1, alt_t2 = tumor_table['TIR'].split(",")
+                        tumor_dp = int(ref_t1) + int(alt_t1)
+                        if tumor_dp > 0:
+                            af = int(alt_t1) / tumor_dp
+                        else:
+                            af = 0
+                elif caller == "dragen":
+                    af = tumor_table['AF']
+                    #depth of reference allele and alternate allele
+                    ref_t1, alt_t1 = tumor_table['AD'].split(",")
+
+                    af = float(af)
+                    ref_t1 = int(ref_t1)
+                    alt_t1 = int(alt_t1)
+                    
+                else:
+                    raise ValueError("Unknown caller when trying to determine ref_count, alt_count and af.")
 
                 # Generate locus ID from chr and pos (note: deletions in GSvar are not pos - 1
                 locus_vcf = vcf_column[0] + "_" + vcf_column[1]
@@ -268,7 +294,7 @@ class MonitoringVariant:
                     score -= 1
                 if base_bias >= 0.8:
                     score -= 1
-
+                
                 # add score to VCF info column
                 if vcf_column[7].strip() == "" or vcf_column[7].strip() == ".":
                     vcf_column[7] = "MonitoringScore=" + str(round(score, 3))
@@ -282,7 +308,7 @@ class MonitoringVariant:
                             + str(alt_t1) + "\t" + str(round(af, 4)) + "\t" + str(vcf_column[6]) + "\t" \
                             + str(impact) + "\t" + str(gene) + "\t" + sequence_context + "\t" + str(round(score, 3))
 
-                if "PASS" in vcf_column[6]:
+                if "PASS" in vcf_column[6] or "." in vcf_column[6]:
                     self.good_mutation_counter += 1
                     self.scoring_TSV[candidate] = score
                     self.scoring_VCF[candidate] = vcf_line
