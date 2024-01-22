@@ -35,11 +35,17 @@ def get_edge(code, in_list, errors):
 def extract_barcode(read_entry, barcode_type):
     qname = str(read_entry.qname)
     barcode_sequence = ""
-    
+
     try:
         barcode_entry = qname.split(':')[-1]
         bc1 = barcode_entry.split(',')[0]
         bc2 = barcode_entry.split(',')[1]
+
+        # switch barcodes if read pair is in F2R1 orientation
+        if (read_entry.is_forward and read_entry.is_read2) or (read_entry.is_reverse and read_entry.is_read1):
+            tmp = bc1
+            bc1 = bc2
+            bc2 = tmp
 
         # Grouping by barcodes
         if barcode_type == "BEGINNING":
@@ -50,6 +56,7 @@ def extract_barcode(read_entry, barcode_type):
             barcode_sequence = bc1 + bc2
 
     except Exception as e:
+        print(e)
         print("Cannot find barcode in read: " + qname)
         print("Does the file contain barcodes in headers?")
         exit(1)
@@ -202,9 +209,10 @@ def generate_consensus_read(reads, min_bq, set_n):
         # Adding barcodes to tag in bam file
         consensus_read.tags += [('DP', count)]
         consensus_read.tags += [('YC', current_color)]
+        consensus_read.tags += [('YD', 0)]
 
         # Info about barcode groups
-        log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
+        log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)), "non-duplex")
         log_info = "\t".join(log_info) + "\n"
 
     else:
@@ -217,12 +225,19 @@ def generate_consensus_read(reads, min_bq, set_n):
         # Containers for consensus read
         seq_dict = {}
         qual_dict = {}
+        orientation = set()
         mapq_list = list()
         lq_read_count = 0
         last_read = reads[0]
 
         # Compare the sequence of reads in a barcode group
         for i in reads:
+
+            # Store orientation
+            if (i.is_read1 and i.is_forward) or (i.is_read2 and i.is_reverse):
+                orientation.add("forward")
+            else:
+                orientation.add("reverse")
 
             # In case that the amount of indels differs between duplicates, take the first read as consensus, but change all base qualities to 0
             if (first_ref_length != i.reference_length) or (first_read_length != i.rlen) or (first_cigar != i.cigarstring):
@@ -357,8 +372,16 @@ def generate_consensus_read(reads, min_bq, set_n):
         # Add color
         consensus_read.tags += [('YC', current_color)]
 
+        # Add duplex tag
+        if len(orientation) > 1:
+            consensus_read.tags += [('YD', 1)]
+            duplex = "duplex"
+        else:
+            consensus_read.tags += [('YD', 0)]
+            duplex = "non-duplex"
+
         # Info about barcode groups
-        log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)))
+        log_info = (consensus_read.qname, str(consensus_read.pos), str(len(reads)), duplex)
         log_info = "\t".join(log_info) + "\n"
 
     return consensus_read, log_info
@@ -401,7 +424,13 @@ def main():
     except IOError as io:
         exit("Cannot open output file. Error:\n" + io)
 
+    # log file
     logfile = open(args.outfile + ".log", 'w')
+
+    # stats
+    n_input_reads = 0
+    n_output_reads = 0
+    n_duplex_reads = 0
 
     min_bq = args.minBQ
     errors = args.barcode_error
@@ -416,6 +445,8 @@ def main():
     # Parse BAM file
     for read in samfile.fetch():
         if not read.is_secondary:
+            # stats
+            n_input_reads += 1
 
             ref_start = str(read.pos)
 
@@ -465,6 +496,11 @@ def main():
                         for barcode in barcode_dict:
                             # Printing consensus reads to a new bam file
                             new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
+                            # stats
+                            n_output_reads += 1
+                            if log_string.split('\t')[-1].strip() == "duplex":
+                                n_duplex_reads += 1
+
                             logfile.write(log_string)
                             outfile.write(new_read)
 
@@ -506,7 +542,10 @@ def main():
                         # printing consensus reads to a new bam file
                         for barcode in barcode_dict[pos2]:
                             new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
-
+                            # stats
+                            n_output_reads += 1
+                            if log_string.split('\t')[-1].strip() == "duplex":
+                                n_duplex_reads += 1
                             logfile.write(log_string)
                             outfile.write(new_read)
 
@@ -565,7 +604,10 @@ def main():
             for barcode in barcode_dict:
                 # Printing consensus reads to a new bam file
                 new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
-
+                # stats
+                n_output_reads += 1
+                if log_string.split('\t')[-1].strip() == "duplex":
+                    n_duplex_reads += 1
                 logfile.write(log_string)
                 outfile.write(new_read)
 
@@ -577,7 +619,10 @@ def main():
             # printing consensus reads to a new bam file
             for barcode in barcode_dict[pos2]:
                 new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
-
+                # stats
+                n_output_reads += 1
+                if log_string.split('\t')[-1].strip() == "duplex":
+                    n_duplex_reads += 1
                 logfile.write(log_string)
                 outfile.write(new_read)
 
@@ -588,6 +633,12 @@ def main():
     stop = timeit.default_timer()
     print('TIME')
     print(stop - start)
+    print('INPUT READS')
+    print(n_input_reads)
+    print('OUTPUT READS')
+    print(n_output_reads)
+    print('DUPLEX READS')
+    print(n_duplex_reads)
 
 
 # Run program
