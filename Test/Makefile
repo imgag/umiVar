@@ -1,7 +1,7 @@
 all: clean CFDNA_01 CFDNA_02 select_monitoring post_filtering
 
 ##Test case for CI
-ci: clean download_test_reference CFDNA_02 select_monitoring post_filtering
+ci: clean download_test_reference CFDNA_02 select_monitoring post_filtering mrd_calculation_01
 
 clean:
 	rm -rf umiVar_CFDNA_01 umiVar_CFDNA_02 select_monitoring_01 select_monitoring_02 select_monitoring_03 postFilter01
@@ -92,5 +92,22 @@ check_post_filter_01:
 	diff -u CFDNA04_01.GSvar.out postFilter01/CFDNA04_01.GSvar
 	diff -u CFDNA05_01.GSvar.out postFilter01/CFDNA05_01.GSvar
 	diff -u CFDNA06_01.GSvar.out postFilter01/CFDNA06_01.GSvar
+
+mrd_calculation_01: run_mrd_calculation_01 check_mrd_calculation_01
+
+run_mrd_calculation_01:
+	mkdir -p test_output
+	mkdir -p test_output/mrdCalculation01
+	python3 ../calculateMRD.py data_input/mrdCalculation01 data_input/mrdCalculation01/cfdna_panel.vcf test_output/mrdCalculation01/mrdCalculation01_bg.mrd \
+		test_output/mrdCalculation01/mrdCalculation01_monitoring_counts.tsv
+	python3 ../calculateMRD.py data_input/mrdCalculation01 data_input/mrdCalculation01/cfdna_panel.vcf test_output/mrdCalculation01/mrdCalculation01_bg_unfiltered.mrd \
+		test_output/mrdCalculation01/mrdCalculation01_monitoring_counts_unfiltered.tsv --max_af 1.0 --keep_gonosomes --keep_indels
+
+check_mrd_calculation_01:
+	diff -u data_output/mrdCalculation01/mrdCalculation01_bg.mrd test_output/mrdCalculation01/mrdCalculation01_bg.mrd
+	diff -u data_output/mrdCalculation01/mrdCalculation01_monitoring_counts.tsv test_output/mrdCalculation01/mrdCalculation01_monitoring_counts.tsv
+	diff -u data_output/mrdCalculation01/mrdCalculation01_bg_unfiltered.mrd test_output/mrdCalculation01/mrdCalculation01_bg_unfiltered.mrd
+	diff -u data_output/mrdCalculation01/mrdCalculation01_monitoring_counts_unfiltered.tsv test_output/mrdCalculation01/mrdCalculation01_monitoring_counts_unfiltered.tsv
+
 
 

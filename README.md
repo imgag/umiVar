@@ -132,3 +132,31 @@ $umiVar_R_binary="[PATH_TO_R]/RScript"
 $umiVar_samtools_binary="[PATH_TO_SAMTOOLS]/samtools"
 ```
 
+### Alternative MRD calculation
+
+The Script `calculateMRD.py` provides an alternative approach to calculate the minimum residual disease based on the background noise. For that it uses pileup files created by `umiVar` and calculates the MRD with a Fisher's Exact Test:
+```
+usage: calculateMRD.py [-h] [--max_af MAX_AF] [--keep_gonosomes] [--blacklist BLACKLIST] 
+                        [--remove_off_target] [--keep_indels] folder panel output variants
+
+Script to calculate MRD based on background noise.
+
+positional arguments:
+  folder                umiVar folder containing dedup TSV files.
+  panel                 VCF containing the cfDNA panel.(commas seperated if multiple)
+  output                Output TSV containing MRD value.
+  variants              Output TSV containing read counts and p-values for each monitoring variants.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --max_af MAX_AF       Maximum allele frequency for variants to include in the computation. (>1 to disable)
+  --keep_gonosomes      Do not remove gonosomes
+  --blacklist BLACKLIST
+                        VCF of variants which should be excluded for the background error rate
+  --remove_off_target   Remove tumor off-target variants
+  --keep_indels         Do not remove InDels.
+
+```
+
+
+

@@ -1,0 +1,36 @@
+##fileformat=VCFv4.2
+##GENOME_BUILD=GRCh38
+##CREATION_DATE=2023-08-02
+##INFO=<ID=gene_change,Number=.,Type=String,Description="Affected gene and location.">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE
+chr1	26300987	ID	N	N	.	.	.	GT	./.
+chr1	114713909	M	G	T	.	.	gene_change=NRAS_Q61K	GT	./.
+chr1	114713915	M	C	T	.	.	gene_change=NRAS_A59T	GT	./.
+chr2	24918669	ID	N	N	.	.	.	GT	./.
+chr2	68655336	ID	N	N	.	.	.	GT	./.
+chr3	179218303	M	G	A	.	.	gene_change=PIK3CA_E545K	GT	./.
+chr7	55174771	M	AGGAATTAAGAGAAGC	A	.	.	gene_change=EGFR_delE746-A750	GT	./.
+chr7	55181316	M	GG	GGCCAGCGTGG	.	.	gene_change=EGFR_V769-D770insASV	GT	./.
+chr7	55181378	M	C	T	.	.	gene_change=EGFR_T790M	GT	./.
+chr7	55191822	M	T	G	.	.	gene_change=EGFR_L858R	GT	./.
+chr7	100577850	ID	N	N	.	.	.	GT	./.
+chr7	150742412	ID	N	N	.	.	.	GT	./.
+chr8	106770107	ID	N	N	.	.	.	GT	./.
+chr8	143984818	ID	N	N	.	.	.	GT	./.
+chr9	128261226	ID	N	N	.	.	.	GT	./.
+chr9	128424504	ID	N	N	.	.	.	GT	./.
+chr10	17644392	ID	N	N	.	.	.	GT	./.
+chr10	71362188	ID	N	N	.	.	.	GT	./.
+chr11	47324594	ID	N	N	.	.	.	GT	./.
+chr12	25245350	M	C	T	.	.	gene_change=KRAS_G12D	GT	./.
+chr14	74286575	ID	N	N	.	.	.	GT	./.
+chr16	66913480	ID	N	N	.	.	.	GT	./.
+chr17	7513364	ID	N	N	.	.	.	GT	./.
+chr17	7847039	ID	N	N	.	.	.	GT	./.
+chr17	19093611	ID	N	N	.	.	.	GT	./.
+chr17	50356597	ID	N	N	.	.	.	GT	./.
+chr19	46674656	ID	N	N	.	.	.	GT	./.
+chr20	7982394	ID	N	N	.	.	.	GT	./.
+chr20	63540928	ID	N	N	.	.	.	GT	./.
+chr22	19132425	ID	N	N	.	.	.	GT	./.

@@ -16,3 +16,5 @@ umiVar_personalized
 /Test/chr10.fa
 /Test/chr10.fa.fai
 /Test/postFilter01
+/Test/test_output/
+/Test/filter_variants.log
