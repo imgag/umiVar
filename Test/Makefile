@@ -1,4 +1,4 @@
-all: clean CFDNA_01 CFDNA_02 select_monitoring post_filtering
+all: clean CFDNA_01 CFDNA_02 select_monitoring post_filtering mrd_calculation_01
 
 ##Test case for CI
 ci: clean download_test_reference CFDNA_02 select_monitoring post_filtering mrd_calculation_01

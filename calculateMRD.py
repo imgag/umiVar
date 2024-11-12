@@ -298,9 +298,21 @@ def main():
             else:
                 snp["z_stats_median_wo0-" + dup_level] = np.nan
 
+        depth_mon = alt_counts_mon + ref_counts_mon
+        depth_bg = alt_counts_bg + ref_counts_bg
+
+        mon_af = np.nan
+        if depth_mon > 0:
+            mon_af = alt_counts_mon / depth_mon
+        median_af = np.median([(snp["m_ALT_" + dup_level] / (snp["m_REF_" + dup_level] + snp["m_ALT_" + dup_level])) if (snp["m_REF_" + dup_level] + snp["m_ALT_" + dup_level]) > 0
+                               else np.nan for snp in monitoring_variant_counts if ("m_ALT_" + dup_level) in snp.keys()])
+
         # print info
-        print("Background AF: " + str(alt_counts_bg/ref_counts_bg))
-        # print("Monitoring AF: " + str(alt_counts_mon/ref_counts_mon))
+        print("Background AF: " + str(alt_counts_bg/depth_bg))
+        if depth_mon > 0:
+            print("Monitoring AF: " + str(alt_counts_mon/depth_mon))
+        else:
+            print("Monitoring AF: nan")
 
         # perform Proportion Z Test
         p_0 = alt_counts_bg/ref_counts_bg
@@ -324,27 +336,27 @@ def main():
             if p_value <= 0.05:
                 break
         min_detectable_af = np.nan
-        if p_value <= 0.05:
-            min_detectable_af = i / ref_counts_mon
+        if p_value <= 0.05 and depth_mon > 0:
+            min_detectable_af = i / depth_mon
         print("minimal detectable AF: " + str(min_detectable_af))
 
         # store output
-        output.append(["{:.3f}".format(np.log10(max(res[1], 1e-20))),
-                       "{:.5f}".format(res[1]),
-                       str(ref_counts_mon),
-                       str(alt_counts_mon),
-                       "{:.5f}".format(alt_counts_mon/ref_counts_mon),
-                       "{:.5f}".format(mon_af_std),
-                       "{:.5f}".format(np.median([(snp["m_ALT_" + dup_level] / snp["m_REF_" + dup_level]) for snp in monitoring_variant_counts if ("m_ALT_" + dup_level) in snp.keys()])),
-                       dup_level,
-                       "{:.8f}".format(alt_counts_bg/(ref_counts_bg + alt_counts_bg)),
-                       str(ref_counts_bg + alt_counts_bg),
-                       str(alt_counts_bg),
-                       str(n_mon_var_count_pre_filter),
-                       str(n_mon_var_count_post_filter),
-                       str(n_mon_var_count_post_filter_with_counts),
-                       "{:.5f}".format(z),
-                       "{:.8f}".format(min_detectable_af)
+        output.append(["{:.3f}".format(np.log10(max(res[1], 1e-20))), #MRD_log10
+                       "{:.5f}".format(res[1]), #MRD_pval
+                       str(ref_counts_mon), #SUM_DP
+                       str(alt_counts_mon), #SUM_ALT
+                       "{:.5f}".format(mon_af), #Mean_AF
+                       "{:.5f}".format(mon_af_std), #Stddev_AF
+                       "{:.5f}".format(median_af), #Median_AF
+                       dup_level, #duplication
+                       "{:.8f}".format(alt_counts_bg/(depth_bg)), #error_rate
+                       str(ref_counts_bg), #BG_REF
+                       str(alt_counts_bg), #BG_other
+                       str(n_mon_var_count_pre_filter), #monitoring_count_pre_filter
+                       str(n_mon_var_count_post_filter), #monitoring_count_post_filter
+                       str(n_mon_var_count_post_filter_with_counts), #monitoring_count_post_filter_with_counts
+                       "{:.5f}".format(z), #proportion_Z_statistic
+                       "{:.8f}".format(min_detectable_af) #minimal_detectable_af
                        ])
 
     # write output files
