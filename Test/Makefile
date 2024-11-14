@@ -13,7 +13,7 @@ download_reference:
 	samtools faidx GRCh37.fa
 
 download_test_reference:
-	wget http://ftp.ensembl.org/pub/grch37/current/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.chromosome.7.fa.gz
+	wget http://ftp.ensembl.org/pub/grch37/release-113/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.chromosome.7.fa.gz
 	gunzip -kc Homo_sapiens.GRCh37.dna.chromosome.7.fa.gz | sed -r 's/>/>chr/g' > chr7.fa
 	samtools faidx chr7.fa
 	rm Homo_sapiens.GRCh37.dna.chromosome.7.fa.gz
