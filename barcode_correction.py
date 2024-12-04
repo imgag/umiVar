@@ -192,7 +192,7 @@ def generate_consensus_read(reads, min_bq, set_n):
     consensus_seq = list()
     consensus_qual = list()
     consensus_read = reads[0]
-
+  
     # Objects to save info in lexicographic order of the reads
     read_names_list = list()
     reads_dict = {}
@@ -386,6 +386,7 @@ def generate_consensus_read(reads, min_bq, set_n):
 
     return consensus_read, log_info
 
+ 
 
 # Main method bundles argument parsing and BAM file parsing
 # Example command line: python barcode_correction.py --infile PATH/TO/test.bam --outfile PATH/TO/corrected.test.bam --barcodes BOTH
@@ -394,7 +395,7 @@ def main():
     # Read script parameters
     parser = argparse.ArgumentParser(description='Correcting BAM files using barcodes info')
     parser.add_argument('--infile', required=True, dest='infile', help='Input BAM file.')
-    parser.add_argument('--outfile', required=True, dest='outfile', help='Output BAM file.')
+    parser.add_argument('--outfile', required=True, dest='outfile', help='mixed consensus output BAM file.')
     parser.add_argument('--barcodes', required=False, dest='barcodes', choices=['START', 'END', 'BOTH'], default='BOTH',
                         help='Barcode position: START = 5\' barcode; END = 3\' barcode; BOTH = 5\' and 3\' barcodes. Default = BOTH')
     parser.add_argument('--minBQ', required=False, dest='minBQ', type=int, default=10,
@@ -403,6 +404,7 @@ def main():
                         help='Maximum number of sequencing errors allowed in barcode sequence. Default = 0')
     parser.add_argument('--n', required=False, dest='n', action='store_true',
                         help='Use Ns instead of reducing base quality.')
+    parser.add_argument('--outfile1', required=True, dest='outfile1', help='output duplex BAM file')
 
     try:
         args = parser.parse_args()
@@ -419,11 +421,13 @@ def main():
 
     # Output BAM
     outfile = ''
+    outfile1 = ''
     try:
         outfile = pysam.Samfile(args.outfile, mode="wb", template=samfile)
+        outfile1 = pysam.Samfile(args.outfile1, mode="wb", template=samfile)
     except IOError as io:
         exit("Cannot open output file. Error:\n" + io)
-
+        exit("Cannot open output1 file. Error:\n" + io)
     # log file
     logfile = open(args.outfile + ".log", 'w')
 
@@ -498,11 +502,13 @@ def main():
                             new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
                             # stats
                             n_output_reads += 1
+                            
                             if log_string.split('\t')[-1].strip() == "duplex":
                                 n_duplex_reads += 1
-
                             logfile.write(log_string)
                             outfile.write(new_read)
+                            if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                                outfile1.write(new_read)
 
                     positions_dict = {}
                     unique_barcodes = {}
@@ -544,10 +550,13 @@ def main():
                             new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
                             # stats
                             n_output_reads += 1
+                            
                             if log_string.split('\t')[-1].strip() == "duplex":
                                 n_duplex_reads += 1
                             logfile.write(log_string)
                             outfile.write(new_read)
+                            if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                                outfile1.write(new_read)
 
                     positions_dict = {}
                     pos = ref_start
@@ -606,10 +615,14 @@ def main():
                 new_read, log_string = generate_consensus_read(list(barcode_dict[barcode]), min_bq, set_n)
                 # stats
                 n_output_reads += 1
+                
                 if log_string.split('\t')[-1].strip() == "duplex":
                     n_duplex_reads += 1
                 logfile.write(log_string)
                 outfile.write(new_read)
+                if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                    outfile1.write(new_read)
+                         
 
     elif len(positions_dict) > 0 and errors == 0:
 
@@ -621,14 +634,19 @@ def main():
                 new_read, log_string = generate_consensus_read(list(barcode_dict[pos2][barcode]), min_bq, set_n)
                 # stats
                 n_output_reads += 1
+                
                 if log_string.split('\t')[-1].strip() == "duplex":
                     n_duplex_reads += 1
                 logfile.write(log_string)
                 outfile.write(new_read)
+                if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                    outfile1.write(new_read)
 
+    
     samfile.close()
     logfile.close()
     outfile.close()
+    outfile1.close()
 
     stop = timeit.default_timer()
     print('TIME')
