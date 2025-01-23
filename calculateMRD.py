@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--blacklist", type=str, help="VCF of variants which should be excluded for the background error rate", default="")
     parser.add_argument("--remove_off_target", action="store_true", help="Remove tumor off-target variants")
     parser.add_argument("--keep_indels", action="store_true", help="Do not remove InDels.")
+    parser.add_argument("--keep_duplication_groups_separate", action="store_true", help="Calculate errors/MRD on the different duplication set separately.")
 
     args = parser.parse_args()
     return args
@@ -161,10 +162,11 @@ def main():
         combined_tables[dup_level] = dedup_tables[dup_level][["A", "C", "G", "T", "DEL", "INS", "DP", "DP_HQ"]]
         included_levels = [dup_level]
         print(dup_level)
-        for idx in range(dup_levels.index(dup_level) + 1, len(dup_levels)):
-            combined_tables[dup_level] = combined_tables[dup_level].add(dedup_tables[dup_levels[idx]][["A", "C", "G", "T", "DEL", "INS", "DP", "DP_HQ"]], fill_value=0)
-            included_levels.append(dup_levels[idx])
-            print(" - " + dup_levels[idx])
+        if not args.keep_duplication_groups_separate:
+            for idx in range(dup_levels.index(dup_level) + 1, len(dup_levels)):
+                combined_tables[dup_level] = combined_tables[dup_level].add(dedup_tables[dup_levels[idx]][["A", "C", "G", "T", "DEL", "INS", "DP", "DP_HQ"]], fill_value=0)
+                included_levels.append(dup_levels[idx])
+                print(" - " + dup_levels[idx])
 
         # get combined ref column
         ref_column = pd.concat([dedup_tables[dedup]["REF"] for dedup in included_levels])
