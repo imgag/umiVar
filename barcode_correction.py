@@ -386,7 +386,13 @@ def generate_consensus_read(reads, min_bq, set_n):
 
     return consensus_read, log_info
 
- 
+
+def log(logfile, line, write_log):
+    if write_log:
+        logfile.write(line)
+
+    return
+
 
 # Main method bundles argument parsing and BAM file parsing
 # Example command line: python barcode_correction.py --infile PATH/TO/test.bam --outfile PATH/TO/corrected.test.bam --barcodes BOTH
@@ -396,15 +402,20 @@ def main():
     parser = argparse.ArgumentParser(description='Correcting BAM files using barcodes info')
     parser.add_argument('--infile', required=True, dest='infile', help='Input BAM file.')
     parser.add_argument('--outfile', required=True, dest='outfile', help='mixed consensus output BAM file.')
+    parser.add_argument('--outfile1', required=True, dest='outfile1', help='output duplex BAM file')
     parser.add_argument('--barcodes', required=False, dest='barcodes', choices=['START', 'END', 'BOTH'], default='BOTH',
                         help='Barcode position: START = 5\' barcode; END = 3\' barcode; BOTH = 5\' and 3\' barcodes. Default = BOTH')
     parser.add_argument('--minBQ', required=False, dest='minBQ', type=int, default=10,
-                        help='Minimum base quality to be considered. Default = 30')
+                        help='Minimum base quality to be considered. Default = 10')
     parser.add_argument('--barcode_error', required=False, dest='barcode_error', type=int, default=0,
                         help='Maximum number of sequencing errors allowed in barcode sequence. Default = 0')
     parser.add_argument('--n', required=False, dest='n', action='store_true',
                         help='Use Ns instead of reducing base quality.')
-    parser.add_argument('--outfile1', required=True, dest='outfile1', help='output duplex BAM file')
+    parser.add_argument('--threads', required=False, dest='threads', type=int, default=1,
+                        help='Number of threads used for reading and writing BAM files.')
+    parser.add_argument('--no_logging', required=False, dest='no_log', action='store_true',
+                        help='Skip writing the logfile.')
+
 
     try:
         args = parser.parse_args()
@@ -415,7 +426,7 @@ def main():
     # Input BAM
     samfile = ''
     try:
-        samfile = pysam.Samfile(args.infile, "rb")
+        samfile = pysam.Samfile(args.infile, "rb", threads=args.threads)
     except IOError as io:
         exit("Cannot open input file. Error:\n" + io)
 
@@ -423,13 +434,11 @@ def main():
     outfile = ''
     outfile1 = ''
     try:
-        outfile = pysam.Samfile(args.outfile, mode="wb", template=samfile)
-        outfile1 = pysam.Samfile(args.outfile1, mode="wb", template=samfile)
+        outfile = pysam.Samfile(args.outfile, mode="wb", template=samfile, threads=args.threads)
+        outfile1 = pysam.Samfile(args.outfile1, mode="wb", template=samfile, threads=args.threads)
     except IOError as io:
         exit("Cannot open output file. Error:\n" + io)
         exit("Cannot open output1 file. Error:\n" + io)
-    # log file
-    logfile = open(args.outfile + ".log", 'w')
 
     # stats
     n_input_reads = 0
@@ -439,6 +448,15 @@ def main():
     min_bq = args.minBQ
     errors = args.barcode_error
     set_n = args.n
+
+    write_log = not args.no_log
+
+    # log file
+    if write_log:
+        logfile = open(args.outfile + ".log", 'w')
+    else:
+        logfile = None
+
 
     pos = 0
     positions_dict = {}
@@ -505,7 +523,7 @@ def main():
                             
                             if log_string.split('\t')[-1].strip() == "duplex":
                                 n_duplex_reads += 1
-                            logfile.write(log_string)
+                            log(logfile, log_string, write_log)
                             outfile.write(new_read)
                             if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
                                 outfile1.write(new_read)
@@ -553,7 +571,7 @@ def main():
                             
                             if log_string.split('\t')[-1].strip() == "duplex":
                                 n_duplex_reads += 1
-                            logfile.write(log_string)
+                            log(logfile, log_string, write_log)
                             outfile.write(new_read)
                             if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
                                 outfile1.write(new_read)
@@ -618,7 +636,7 @@ def main():
                 
                 if log_string.split('\t')[-1].strip() == "duplex":
                     n_duplex_reads += 1
-                logfile.write(log_string)
+                log(logfile, log_string, write_log)
                 outfile.write(new_read)
                 if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
                     outfile1.write(new_read)
@@ -637,16 +655,18 @@ def main():
                 
                 if log_string.split('\t')[-1].strip() == "duplex":
                     n_duplex_reads += 1
-                logfile.write(log_string)
+                log(logfile, log_string, write_log)
                 outfile.write(new_read)
                 if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
                     outfile1.write(new_read)
 
     
     samfile.close()
-    logfile.close()
     outfile.close()
     outfile1.close()
+
+    if write_log:
+        logfile.close()
 
     stop = timeit.default_timer()
     print('TIME')
