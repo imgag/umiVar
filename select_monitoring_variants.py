@@ -254,7 +254,7 @@ class MonitoringVariant:
                 hom_len = self.longest_homopolymer(sequence_context)
                 distinct_bases, base_bias = self.frequent_base(sequence_context)
 
-                print(sequence_context + "\t" + str(hom_len) + "\t" + str(distinct_bases) + "\t" + str(base_bias))
+                # print(sequence_context + "\t" + str(hom_len) + "\t" + str(distinct_bases) + "\t" + str(base_bias))
 
                 # Score mutations
                 score = 4 * af
