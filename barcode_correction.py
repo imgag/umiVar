@@ -402,7 +402,7 @@ def main():
     parser = argparse.ArgumentParser(description='Correcting BAM files using barcodes info')
     parser.add_argument('--infile', required=True, dest='infile', help='Input BAM file.')
     parser.add_argument('--outfile', required=True, dest='outfile', help='mixed consensus output BAM file.')
-    parser.add_argument('--outfile1', required=True, dest='outfile1', help='output duplex BAM file')
+    parser.add_argument('--duplex_bam', required=False, dest='duplex_bam', help='output duplex BAM file')
     parser.add_argument('--barcodes', required=False, dest='barcodes', choices=['START', 'END', 'BOTH'], default='BOTH',
                         help='Barcode position: START = 5\' barcode; END = 3\' barcode; BOTH = 5\' and 3\' barcodes. Default = BOTH')
     parser.add_argument('--minBQ', required=False, dest='minBQ', type=int, default=10,
@@ -432,13 +432,19 @@ def main():
 
     # Output BAM
     outfile = ''
-    outfile1 = ''
     try:
         outfile = pysam.Samfile(args.outfile, mode="wb", template=samfile, threads=args.threads)
-        outfile1 = pysam.Samfile(args.outfile1, mode="wb", template=samfile, threads=args.threads)
     except IOError as io:
         exit("Cannot open output file. Error:\n" + io)
-        exit("Cannot open output1 file. Error:\n" + io)
+    
+    duplex_bam = ''
+    write_duplex = False;
+    if args.duplex_bam != "":
+        try:
+            duplex_bam = pysam.Samfile(args.duplex_bam, mode="wb", template=samfile, threads=args.threads)
+            write_duplex = True;
+        except IOError as io:
+            exit("Cannot open duplex_bam file. Error:\n" + io)
 
     # stats
     n_input_reads = 0
@@ -525,8 +531,8 @@ def main():
                                 n_duplex_reads += 1
                             log(logfile, log_string, write_log)
                             outfile.write(new_read)
-                            if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
-                                outfile1.write(new_read)
+                            if write_duplex and new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                                duplex_bam.write(new_read)
 
                     positions_dict = {}
                     unique_barcodes = {}
@@ -573,8 +579,8 @@ def main():
                                 n_duplex_reads += 1
                             log(logfile, log_string, write_log)
                             outfile.write(new_read)
-                            if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
-                                outfile1.write(new_read)
+                            if write_duplex and new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                                duplex_bam.write(new_read)
 
                     positions_dict = {}
                     pos = ref_start
@@ -638,8 +644,8 @@ def main():
                     n_duplex_reads += 1
                 log(logfile, log_string, write_log)
                 outfile.write(new_read)
-                if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
-                    outfile1.write(new_read)
+                if write_duplex and new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                    duplex_bam.write(new_read)
                          
 
     elif len(positions_dict) > 0 and errors == 0:
@@ -657,13 +663,14 @@ def main():
                     n_duplex_reads += 1
                 log(logfile, log_string, write_log)
                 outfile.write(new_read)
-                if new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
-                    outfile1.write(new_read)
+                if write_duplex and new_read.has_tag("YD") and new_read.get_tag("YD") == 1:
+                    duplex_bam.write(new_read)
 
     
     samfile.close()
     outfile.close()
-    outfile1.close()
+    if write_duplex:
+        duplex_bam.close()
 
     if write_log:
         logfile.close()
