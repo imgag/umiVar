@@ -439,7 +439,7 @@ def main():
     
     duplex_bam = ''
     write_duplex = False;
-    if args.duplex_bam != "":
+    if args.duplex_bam is not None:
         try:
             duplex_bam = pysam.Samfile(args.duplex_bam, mode="wb", template=samfile, threads=args.threads)
             write_duplex = True;
