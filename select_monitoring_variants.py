@@ -9,10 +9,11 @@ import gzip
 class MonitoringVariant:
 
     # Constructor
-    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels, num_var, no_off_target):
+    def __init__(self, input_vcf_file, input_gsv_file, out_folder, min_depth, min_alt, min_af, no_indels, num_var, no_off_target, n_id):
 
         # Input files and output folder
         self.input_vcf_file = input_vcf_file
+        self.n_id = n_id
         self.input_gsv_file = input_gsv_file
         self.out_folder = out_folder
 
@@ -129,11 +130,12 @@ class MonitoringVariant:
                             caller = "strelka"
                         if "dragen" in vcf_line.lower(): 
                             caller = "dragen"
-                    
+                        if "deepsomatic" in vcf_line.lower():
+                            caller = "deepsomatic"
                     continue
                    
                 if caller == "unknown":
-                    raise ValueError("Unknown caller for the VCF file, couldn't find caller line of supported caller (Strelka2, Dragen). Expected ##source=strelka or ##source=Dragen_somatic_calling")
+                    raise ValueError("Unknown caller for the VCF file, couldn't find caller line of supported caller (Strelka2, Dragen, DeepSomatic). Expected ##source=strelka, ##source=Dragen_somatic_calling or ##source=DeepSomatic")
                 
                 # Get VCF fields of a variant entry
                 vcf_column = vcf_line.split("\t")
@@ -143,8 +145,11 @@ class MonitoringVariant:
                 format_column = vcf_column[8].split(":")
 
                 # Get fields of the sample columns
-                normal_sample = vcf_column[9].split(":")
-                tumor_sample = vcf_column[10].split(":")
+                if caller != "deepsomatic":
+                    normal_sample = vcf_column[9].split(":")
+                    tumor_sample = vcf_column[10].split(":")
+                else:
+                    tumor_sample = vcf_column[9].split(":")
 
                 # Store Info Abbreviations and content in dictionary
                 info_pairs = dict()
@@ -161,7 +166,8 @@ class MonitoringVariant:
                 tumor_table = dict()
 
                 for i in range(len(format_column)):
-                    normal_table[format_column[i]] = normal_sample[i]
+                    if caller != "deepsomatic":
+                        normal_table[format_column[i]] = normal_sample[i]
                     tumor_table[format_column[i]] = tumor_sample[i]
 
                 # Check if indel
@@ -174,7 +180,10 @@ class MonitoringVariant:
                     continue
 
                 # Get depth of coverage for tumor and normal sample
-                normal_dp = int(normal_table['DP'])
+                if caller != "deepsomatic":
+                    normal_dp = int(normal_table['DP'])
+                else:
+                    normal_dp = int(info_pairs[self.n_id + "_DP"])                
                 tumor_dp = int(tumor_table['DP'])
                 
                 if caller == "strelka":
@@ -206,7 +215,14 @@ class MonitoringVariant:
                     af = float(af)
                     ref_t1 = int(ref_t1)
                     alt_t1 = int(alt_t1)
-                    
+                elif caller == "deepsomatic":
+                    af = tumor_table['VAF']
+                    #depth of reference allele and alternate allele
+                    ref_t1, alt_t1 = tumor_table['AD'].split(",")
+
+                    af = float(af)
+                    ref_t1 = int(ref_t1)
+                    alt_t1 = int(alt_t1)
                 else:
                     raise ValueError("Unknown caller when trying to determine ref_count, alt_count and af.")
 
@@ -390,12 +406,14 @@ def main():
     parser.add_argument('-g', '--gsv', type=str, required=True, help='GSvar file with all variants of a patient')
     parser.add_argument('-r', '--ref', type=str, required=True, help='Reference genome file, e.g. GRCh38.fasta')
     parser.add_argument('-o', '--out', type=str, default='', help='Output directory. Must not exist.')
+    parser.add_argument('-s', '--normal_sample', type=str, required=False, help='Normal sample ID. Required when vcf was called by DeepSomatic.')
     parser.add_argument('-d', '--min_depth', type=int, default=50, help='Minimum depth at variant site.')
     parser.add_argument('-a', '--min_alt', type=int, default=5, help='Minimum alternative base count of variant.')
     parser.add_argument('-f', '--min_af', type=float, default=0.1, help='Minimum alternative allele frequency of variant.')
     parser.add_argument('-i', '--no_indels', action='store_true', help='Do not select INDELS as monitoring variants.')
     parser.add_argument('-n', '--num_var', type=int, default=30, help='Number of monitoring variants which will be selected.')
     parser.add_argument('-t', '--no_off_target', action='store_true', help='Do not fill-up list with off-target variants.')
+    
 
     try:
         args = parser.parse_args()
@@ -413,6 +431,7 @@ def main():
     no_indels = args.no_indels
     num_var = args.num_var
     no_off_target = args.no_off_target
+    n_id = args.normal_sample
 
     # Create output folder
     # No output folder specified: create folder in current working directory
@@ -443,7 +462,7 @@ def main():
         # exit(0)
 
     # Instantiate MonitoringVariant object and run the variant evaluation
-    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels, num_var, no_off_target)
+    evaluator = MonitoringVariant(input_vcf_file, input_gsv_file, out_dir, min_depth, min_alt, min_af, no_indels, num_var, no_off_target, n_id)
     evaluator.read_gsv()
     evaluator.evaluate_variants(input_ref_file)
 
