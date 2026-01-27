@@ -82,33 +82,35 @@ python barcode_correction.py --infile raw.bam --outfile barcode_corrected.bam --
 
 ## umiVar variant caller
 ```
-usage: umiVar - variant calling with unique molecular barcodes [-h] -tbam TBAM [-nbam NBAM] [-b BED] -r REF -hom HOMOPOLYMER [-o OUT_FILE] [-p PARAM] [-mq MQ] [-bq BQ] [-d DIST]
-                                                               [-ac AC] [-ns NUM_SITES] [-str {0,1}] [-t TEMP_DIR]
+usage: umiVar - variant calling with unique molecular barcodes [-h] -tbam TBAM [-nbam NBAM] -r REF [-b BED] [-m MONITORING] [-o OUT_FOLDER] [-p PARAM] [-mq MQ] [-bq BQ] [-d DIST] [-ac AC] [-af AF] [-ns NUM_SITES] [-sb {0,1}] [-t TEMP_DIR] [-kt]
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -tbam TBAM, --tbam TBAM
                         Tumor bam file
   -nbam NBAM, --nbam NBAM
                         Normal bam file
-  -b BED, --bed BED     Bed file of the targeted regions. O-based
   -r REF, --ref REF     Reference genome - fasta
-  -hom HOMOPOLYMER, --homopolymer HOMOPOLYMER
-                        File with homopolymer positions in reference genome
-  -o OUT_FILE, --out_file OUT_FILE
-                        Out vcf file
+  -b BED, --bed BED     Bed file of the targeted regions. O-based
+  -m MONITORING, --monitoring MONITORING
+                        VCF file with genomic positions for monitoring or sample-IDing.
+  -o OUT_FOLDER, --out_folder OUT_FOLDER
+                        Output folder. Will be created if not existing
   -p PARAM, --param PARAM
                         Beta-binomial parameters table
   -mq MQ, --mq MQ       Minimum mapping quality
   -bq BQ, --bq BQ       Minimum base quality
-  -d DIST, --dist DIST  Minimum distance allowed between variants
+  -d DIST, --dist DIST  Minimum distance between variants
   -ac AC, --ac AC       Minimum number of reads supporting a variant
+  -af AF, --af AF       Minimum fraction of reads supporting a variant
   -ns NUM_SITES, --num_sites NUM_SITES
                         Number of sites to be analysed
-  -str {0,1}, --strand {0,1}
-                        Strand filter activation. 0 for deactivating the filter. Default [0]
+  -sb {0,1}, --strand_bias {0,1}
+                        Fisher strand bias filter. Default [0]
   -t TEMP_DIR, --temp_dir TEMP_DIR
                         Temporary directory
+  -kt, --keep_temp      Don't delete temporary directory
+
 ```
 \
 Example:
