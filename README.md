@@ -63,16 +63,22 @@ usage: barcode_correction.py [-h] --infile INFILE --outfile OUTFILE [--barcodes 
 
 Correcting BAM files using barcodes info
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --infile INFILE       Input BAM file.
-  --outfile OUTFILE     Output BAM file.
+  --outfile OUTFILE     mixed consensus output BAM file.
+  --duplex_bam DUPLEX_BAM
+                        output duplex BAM file
   --barcodes {START,END,BOTH}
                         Barcode position: START = 5' barcode; END = 3' barcode; BOTH = 5' and 3' barcodes. Default = BOTH
-  --minBQ MINBQ         Minimum base quality to be considered. Default = 30
+  --minBQ MINBQ         Minimum base quality to be considered. Default = 10
   --barcode_error BARCODE_ERROR
                         Maximum number of sequencing errors allowed in barcode sequence. Default = 0
   --n                   Use Ns instead of reducing base quality.
+  --threads THREADS     Number of threads used for reading and writing BAM files.
+  --no_logging          Skip writing the logfile.
+  --barcode_separator BARCODE_SEPARATOR
+                        Separator of barcode 1 and two in the read name. (Barcode separator must be a single character.) Default = ","
 ```
 \
 Example:
