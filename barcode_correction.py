@@ -32,14 +32,14 @@ def get_edge(code, in_list, errors):
 
 
 # Returns the barcode of a read
-def extract_barcode(read_entry, barcode_type):
+def extract_barcode(read_entry, barcode_type, barcode_separator):
     qname = str(read_entry.qname)
     barcode_sequence = ""
 
     try:
         barcode_entry = qname.split(':')[-1]
-        bc1 = barcode_entry.split(',')[0]
-        bc2 = barcode_entry.split(',')[1]
+        bc1 = barcode_entry.split(barcode_separator)[0]
+        bc2 = barcode_entry.split(barcode_separator)[1]
 
         # switch barcodes if read pair is in F2R1 orientation
         if (read_entry.is_forward and read_entry.is_read2) or (read_entry.is_reverse and read_entry.is_read1):
@@ -415,6 +415,8 @@ def main():
                         help='Number of threads used for reading and writing BAM files.')
     parser.add_argument('--no_logging', required=False, dest='no_log', action='store_true',
                         help='Skip writing the logfile.')
+    parser.add_argument('--barcode_separator', required=False, dest='barcode_separator', type=str, default=",",
+                        help='Separator of barcode 1 and two in the read name. (Barcode separator must be a single character.) Default = ","')
 
 
     try:
@@ -422,6 +424,9 @@ def main():
     except IOError as io:
         print(io)
         sys.exit('Error reading parameters.')
+
+    if not len(parser.barcode_separator) == 1:
+        exit('Barcode separator must be a single character.')
 
     # Input BAM
     samfile = ''
@@ -482,7 +487,7 @@ def main():
             ref_length = str(read.next_reference_start) + ',' + str(read.tlen)
 
             # Getting the barcodes
-            bc = extract_barcode(read, args.barcodes)  # Extract the barcode
+            bc = extract_barcode(read, args.barcodes, args.barcode_separator)  # Extract the barcode
             code = bc
 
             if ref_start == pos:
