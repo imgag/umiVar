@@ -5,6 +5,13 @@ import os
 import pysam
 import gzip
 
+from sympy import false
+
+# constants
+required_columns = ["chr", "start", "gene", "coding_and_splicing", "CMC_mutation_significance", "ncg_oncogene", "ncg_tsg", "variant_type"]
+protein_affecting_variant_types = ["frameshift", "splice_acceptor", "splice_donor", "start_lost", "start_retained_variant", "stop_gained", "stop_lost", "inframe_deletion",
+                                   "inframe_insertion", "missense", "splice_region"]
+
 # Identifies and stores SNVs ------------------------------------------------------------------------------------------
 class MonitoringVariant:
 
@@ -47,46 +54,60 @@ class MonitoringVariant:
                 gsv_line = gsv_line.rstrip('\n')
 
                 if gsv_line[0] == '#':
-                    continue
+                    # skip comments
+                    if gsv_line[1] == '#':
+                        continue
+                    #else: parse header (and remove leading '#')
+                    header_line = gsv_line[1:].split('\t')
 
-                # Extract columns: chr, start, end, ref, obs, tumor_af, tumor_dp, normal_af, normal_dp, filter,
-                # quality, gene, variant_type, coding_and_splicing, OMIM, ClinVar, HGMD, RepeatMasker,
-                # dbSNP, 1000g, gnomAD, gnomAD_hom_hemi, gnomAD_sub, ESP_sub, phyloP, Sift, PolyPhen, fathmm-MKL,
-                # CADD, REVEL, MaxEntScan, GeneSplicer, dbscSNV, COSMIC, NGSD_som_c, NGSD_som_p, NGSD_hom, NGSD_het
-                # classification, classification_comment, validation, comment, gene_info, CGI_id, CGI_driver_statement
-                # CGI_gene_role, CGI_transcript, CGI_gene, CGI_consequence, ncg_oncogene, ncg_tsg
+                    idx = 0
+                    header = {}
+                    for header_item in header_line:
+                        header[header_item] = idx
+                        idx += 1
+
+                    # check required columns
+                    for column in required_columns:
+                        if column not in header.keys():
+                            raise Exception('Required column "{}" not found in header'.format(column))
+
                 gsv_column = gsv_line.split("\t")
 
                 # Score driverness
                 driver = 0
-                if 'known' in gsv_column[-7]:
+                if gsv_column[header["CMC_mutation_significance"]] == 1 or gsv_column[header["CMC_mutation_significance"]] == 2:
                     driver = 2
-                elif 'tier 1' in gsv_column[-7]:
+                elif gsv_column[header["CMC_mutation_significance"]] == 3 or gsv_column[header["CMC_mutation_significance"]] == 'Other':
                     driver = 1
 
                 # Score role in oncogenesis
+                # TODO: expand
                 role = 0
-                if 'LoF' in gsv_column[-6] or \
-                        'Act' in gsv_column[-6] or \
-                        'ambiguous' in gsv_column[-6] or \
-                        ('1' in gsv_column[-2] and 'na' not in gsv_column[-2]) or \
-                        ('1' in gsv_column[-1] and 'na' not in gsv_column[-1]):
+                if '1' in gsv_column[header["ncg_oncogene"]] or '1' in gsv_column[header["ncg_tsg"]]:
                     role = 1
 
-                if 'not protein-affecting' in gsv_column[-7]:
-                    role = 0
+                # reduce role if not protein-affecting:
+                if role == 1:
+                    protein_affecting = False
+                    variant_types = gsv_column[header["variant_type"]].replace('&', ',').split(',')
+                    for variant_type in variant_types:
+                        if variant_type in protein_affecting_variant_types:
+                            protein_affecting = True
+
+                    if not protein_affecting:
+                        role = 0
 
                 #  Store score in dictionary
-                locus = gsv_column[0] + "_" + gsv_column[1]
+                locus = gsv_column[header["chr"]] + "_" + gsv_column[header["start"]]
                 onco_score = driver + role
                 self.gsv_score[locus] = onco_score
 
                 # Extract and store gene name and VEP Impact
                 self.gsv_impact[locus] = 'MODIFIER'
-                gene_column = gsv_column[11].split(",")
+                gene_column = gsv_column[header["gene"]].split(",")
                 if bool(gene_column):
-                    self.gsv_gene[locus] = gene_column[0]
-                    self.gsv_impact[locus] = gsv_column[13]
+                    self.gsv_gene[locus] = gene_column[header["chr"]]
+                    self.gsv_impact[locus] = gsv_column[header["coding_and_splicing"]]
 
     # Parse variant information from vcf file -------------------------------------------------------------------------
     def evaluate_variants(self, reference_fasta):
@@ -135,7 +156,8 @@ class MonitoringVariant:
                     continue
                    
                 if caller == "unknown":
-                    raise ValueError("Unknown caller for the VCF file, couldn't find caller line of supported caller (Strelka2, Dragen, DeepSomatic). Expected ##source=strelka, ##source=Dragen_somatic_calling or ##source=DeepSomatic")
+                    raise ValueError("Unknown caller for the VCF file, couldn't find caller line of supported caller (Strelka2, Dragen, DeepSomatic). "
+                                     + "Expected ##source=strelka, ##source=Dragen_somatic_calling or ##source=DeepSomatic")
                 
                 # Get VCF fields of a variant entry
                 vcf_column = vcf_line.split("\t")
@@ -269,8 +291,6 @@ class MonitoringVariant:
                 hom_len = self.longest_homopolymer(sequence_context)
                 distinct_bases, base_bias = self.frequent_base(sequence_context)
 
-                # print(sequence_context + "\t" + str(hom_len) + "\t" + str(distinct_bases) + "\t" + str(base_bias))
-
                 # Score mutations
                 score = 4 * af
                 if af > 0.51:  # Very high AF indicates a germline variant
@@ -292,15 +312,6 @@ class MonitoringVariant:
 
                 if locus_gsv in self.gsv_score:  # Driverness and role in oncogenesis
                     score += self.gsv_score[locus_gsv]
-
-                # # Melanoma super-genes NRAS, KRAS, BRAF, NF1, TERT, CDKN2A, TP53 (replace by white-list file)
-                # if gene == "NRAS" or gene == "KRAS" or gene == "BRAF" or gene == "NF1" \
-                #         or gene == "TERT" or gene == "CDKN2A" or gene == "TP53":
-                #     score += 1
-                #
-                # if gene == "TERT":
-                #     if vcf_column[1] == 1295373 or vcf_column[1] == 1295250 or "12952" in vcf_column[1]:
-                #         score += 2
 
                 # Penalize low-complexity and homopolymer regions
                 if hom_len >= 5:
