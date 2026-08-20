@@ -5,8 +5,6 @@ import os
 import pysam
 import gzip
 
-from sympy import false
-
 # constants
 required_columns = ["chr", "start", "gene", "coding_and_splicing", "CMC_mutation_significance", "ncg_oncogene", "ncg_tsg", "variant_type"]
 protein_affecting_variant_types = ["frameshift", "splice_acceptor", "splice_donor", "start_lost", "start_retained_variant", "stop_gained", "stop_lost", "inframe_deletion",
